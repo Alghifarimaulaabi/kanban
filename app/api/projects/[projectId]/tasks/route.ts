@@ -24,6 +24,15 @@ const VALID_PRIORITIES = new Set<TaskPriority>([
   "URGENT",
 ]);
 
+const STATUS_LABELS: Record<TaskStatus, string> = {
+  BACKLOG: "Backlog",
+  TODO: "To Do",
+  REVISION: "Revision",
+  IN_PROGRESS: "In Progress",
+  IN_REVIEW: "In Review",
+  DONE: "Done",
+};
+
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ projectId: string }> },
@@ -88,6 +97,19 @@ export async function POST(
         .filter((n) => n.content.length > 0)
     : [];
 
+  const initialActivities = [
+    {
+      action: "TASK_CREATED",
+      summary: `Membuat task di kolom ${STATUS_LABELS[status]}`,
+      actorId: session.user.id,
+    },
+    ...initialNotes.map((note) => ({
+      action: "COMMENT_ADDED",
+      summary: `Menambahkan Catatan ${note.roleTag}: "${note.content.length > 80 ? `${note.content.slice(0, 80)}...` : note.content}"`,
+      actorId: session.user.id,
+    })),
+  ];
+
   const task = await prisma.task.create({
     data: {
       projectId,
@@ -109,6 +131,9 @@ export async function POST(
               })),
             }
           : undefined,
+      activities: {
+        create: initialActivities,
+      },
     },
     include: {
       assignee: { select: { id: true, name: true, email: true } },
@@ -116,6 +141,12 @@ export async function POST(
         orderBy: { createdAt: "asc" },
         include: {
           author: { select: { id: true, name: true, email: true } },
+        },
+      },
+      activities: {
+        orderBy: { createdAt: "desc" },
+        include: {
+          actor: { select: { id: true, name: true, email: true } },
         },
       },
     },
@@ -140,6 +171,13 @@ export async function POST(
           roleTag: c.roleTag === "PIC" ? "PIC" : "QC",
           createdAt: c.createdAt.toISOString(),
           author: c.author,
+        })),
+        activities: task.activities.map((a) => ({
+          id: a.id,
+          action: a.action,
+          summary: a.summary,
+          createdAt: a.createdAt.toISOString(),
+          actor: a.actor,
         })),
       },
     },

@@ -16,7 +16,7 @@ function LoginShell() {
     <div className="tb-brutal-surface tb-grid-bg min-h-dvh w-full overflow-x-clip">
       <a
         href="#login-card"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-[2px] focus:border-2 focus:border-[var(--tb-ink)] focus:bg-[var(--tb-primary)] focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-[var(--tb-ink)] focus:shadow-[var(--tb-shadow-sm)]"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-[2px] focus:border-2 focus:border-[var(--tb-ink)] focus:bg-[var(--tb-primary)] focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-[var(--tb-on-accent)] focus:shadow-[var(--tb-shadow-sm)]"
       >
         Skip to login form
       </a>

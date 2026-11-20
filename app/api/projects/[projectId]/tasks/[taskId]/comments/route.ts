@@ -44,18 +44,32 @@ export async function POST(
   }
 
   const roleTag = body?.roleTag === "PIC" ? "PIC" : "QC";
+  const excerpt = content.length > 80 ? `${content.slice(0, 80)}...` : content;
 
-  const comment = await prisma.taskComment.create({
-    data: {
-      taskId,
-      authorId: session.user.id,
-      content,
-      roleTag,
-    },
-    include: {
-      author: { select: { id: true, name: true, email: true } },
-    },
-  });
+  const [comment, activity] = await prisma.$transaction([
+    prisma.taskComment.create({
+      data: {
+        taskId,
+        authorId: session.user.id,
+        content,
+        roleTag,
+      },
+      include: {
+        author: { select: { id: true, name: true, email: true } },
+      },
+    }),
+    prisma.taskActivity.create({
+      data: {
+        taskId,
+        actorId: session.user.id,
+        action: "COMMENT_ADDED",
+        summary: `Menambahkan Catatan ${roleTag}: "${excerpt}"`,
+      },
+      include: {
+        actor: { select: { id: true, name: true, email: true } },
+      },
+    }),
+  ]);
 
   return NextResponse.json(
     {
@@ -65,6 +79,13 @@ export async function POST(
         roleTag: comment.roleTag === "PIC" ? "PIC" : "QC",
         createdAt: comment.createdAt.toISOString(),
         author: comment.author,
+      },
+      activity: {
+        id: activity.id,
+        action: activity.action,
+        summary: activity.summary,
+        createdAt: activity.createdAt.toISOString(),
+        actor: activity.actor,
       },
     },
     { status: 201 },

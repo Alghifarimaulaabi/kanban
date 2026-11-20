@@ -19,13 +19,13 @@ export function TechBroMark(props: SVGProps<SVGSVGElement>) {
       />
       <path
         d="M8 11H22M15 11V26"
-        stroke="var(--tb-ink)"
+        stroke="var(--tb-on-accent)"
         strokeWidth="3.2"
         strokeLinecap="square"
       />
       <path
         d="M21 15H26.5C28.2 15 29.2 16 29.2 17.5C29.2 18.8 28.4 19.6 27.3 19.9C28.7 20.2 29.6 21.2 29.6 22.7C29.6 24.6 28.3 25.8 26.2 25.8H21V15Z"
-        stroke="var(--tb-ink)"
+        stroke="var(--tb-on-accent)"
         strokeWidth="2.8"
         strokeLinejoin="miter"
       />

@@ -86,10 +86,6 @@ async function ProtectedAdminWorkspace() {
 
   return (
     <AdminDashboard
-      currentAdmin={{
-        name: session.user.name,
-        email: session.user.email,
-      }}
       initialAccounts={initialAccounts}
       initialProjects={initialProjects}
     />
@@ -100,7 +96,7 @@ export default function AdminPage() {
   return (
     <Suspense
       fallback={
-        <div className="tb-brutal-surface tb-grid-bg flex min-h-dvh items-center justify-center p-6">
+        <div className="flex flex-1 items-center justify-center p-6">
           <div className="rounded-[4px] border-[3px] border-[var(--tb-ink)] bg-[var(--tb-surface)] px-6 py-4 text-[15px] font-bold text-[var(--tb-ink)] shadow-[var(--tb-shadow-md)]">
             Verifying admin session...
           </div>

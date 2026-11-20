@@ -2,15 +2,18 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import type { ProjectAccent } from "@/components/admin/types";
-import { KanbanBoard } from "@/components/kanban/kanban-board";
+import {
+  KanbanBoard,
+  type ProjectViewTab,
+} from "@/components/kanban/kanban-board";
 import type { KanbanMember, KanbanTask } from "@/components/kanban/types";
 import { prisma } from "@/lib/prisma";
 import { canAccessProject, formatDateInput } from "@/lib/project-access";
 import { requireUserSession } from "@/lib/session";
 
 export const metadata: Metadata = {
-  title: "Kanban Board — TECH BRO",
-  description: "Manage project tasks, progress, and QC bug notes.",
+  title: "Project Workspace — TECH BRO",
+  description: "Manage project tasks in Kanban and Calendar views with QC notes & Activity Log.",
 };
 
 function normalizeAccent(value: string): ProjectAccent {
@@ -20,12 +23,15 @@ function normalizeAccent(value: string): ProjectAccent {
 
 async function ProjectBoardContent({
   params,
+  searchParams,
 }: {
   params: Promise<{ projectId: string }>;
+  searchParams: Promise<{ view?: string }>;
 }) {
-  const [session, { projectId }] = await Promise.all([
+  const [session, { projectId }, resolvedSearchParams] = await Promise.all([
     requireUserSession(),
     params,
+    searchParams,
   ]);
 
   const allowed = await canAccessProject(
@@ -57,6 +63,14 @@ async function ProjectBoardContent({
             orderBy: { createdAt: "asc" },
             include: {
               author: {
+                select: { id: true, name: true, email: true },
+              },
+            },
+          },
+          activities: {
+            orderBy: { createdAt: "desc" },
+            include: {
+              actor: {
                 select: { id: true, name: true, email: true },
               },
             },
@@ -95,7 +109,17 @@ async function ProjectBoardContent({
       createdAt: comment.createdAt.toISOString(),
       author: comment.author,
     })),
+    activities: task.activities.map((activity) => ({
+      id: activity.id,
+      action: activity.action,
+      summary: activity.summary,
+      createdAt: activity.createdAt.toISOString(),
+      actor: activity.actor,
+    })),
   }));
+
+  const initialView: ProjectViewTab =
+    resolvedSearchParams.view === "calendar" ? "calendar" : "kanban";
 
   return (
     <KanbanBoard
@@ -108,6 +132,7 @@ async function ProjectBoardContent({
       }}
       members={members}
       initialTasks={initialTasks}
+      initialView={initialView}
       currentUser={{
         id: session.user.id,
         name: session.user.name,
@@ -120,20 +145,22 @@ async function ProjectBoardContent({
 
 export default function ProjectKanbanPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ projectId: string }>;
+  searchParams: Promise<{ view?: string }>;
 }) {
   return (
     <Suspense
       fallback={
-        <div className="tb-brutal-surface tb-grid-bg flex min-h-dvh items-center justify-center p-6">
+        <div className="flex flex-1 items-center justify-center p-6">
           <div className="rounded-[4px] border-[3px] border-[var(--tb-ink)] bg-[var(--tb-surface)] px-6 py-4 text-[15px] font-bold text-[var(--tb-ink)] shadow-[var(--tb-shadow-md)]">
-            Loading Kanban board...
+            Loading project workspace...
           </div>
         </div>
       }
     >
-      <ProjectBoardContent params={params} />
+      <ProjectBoardContent params={params} searchParams={searchParams} />
     </Suspense>
   );
 }

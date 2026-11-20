@@ -28,6 +28,23 @@ export const auth = betterAuth({
     enabled: true,
     disableSignUp: true,
   },
+  rateLimit: {
+    enabled: true,
+    storage: "database",
+    window: 60,
+    max: 60,
+    customRules: {
+      "/sign-in/email": {
+        window: 60,
+        max: 5,
+      },
+    },
+  },
+  advanced: {
+    ipAddress: {
+      ipAddressHeaders: ["x-forwarded-for", "x-real-ip", "cf-connecting-ip"],
+    },
+  },
   plugins: [
     admin(),
     // nextCookies() MUST be the last plugin in the array

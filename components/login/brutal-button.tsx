@@ -13,13 +13,13 @@ interface BrutalButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const VARIANT_CLASSES: Record<BrutalButtonVariant, string> = {
   primary:
-    "bg-[var(--tb-primary)] text-[var(--tb-ink)] hover:bg-[var(--tb-primary-hover)]",
+    "bg-[var(--tb-primary)] text-[var(--tb-on-accent)] hover:bg-[var(--tb-primary-hover)]",
   surface:
     "bg-[var(--tb-surface)] text-[var(--tb-ink)] hover:bg-[var(--tb-bg)]",
   secondary:
-    "bg-[var(--tb-secondary)] text-[var(--tb-ink)] hover:brightness-95",
+    "bg-[var(--tb-secondary)] text-[var(--tb-on-accent)] hover:brightness-95",
   accent:
-    "bg-[var(--tb-accent)] text-[var(--tb-ink)] hover:brightness-95",
+    "bg-[var(--tb-accent)] text-[var(--tb-on-accent)] hover:brightness-95",
 };
 
 export function BrutalButton({
@@ -56,9 +56,9 @@ export function BrutalButton({
       {isLoading ? (
         <span className="inline-flex items-center gap-2.5">
           <span className="inline-flex items-center gap-1" aria-hidden="true">
-            <span className="tb-loading-dot h-2 w-2 bg-[var(--tb-ink)]" />
-            <span className="tb-loading-dot-2 h-2 w-2 bg-[var(--tb-ink)]" />
-            <span className="tb-loading-dot-3 h-2 w-2 bg-[var(--tb-ink)]" />
+            <span className="tb-loading-dot h-2 w-2 bg-current" />
+            <span className="tb-loading-dot-2 h-2 w-2 bg-current" />
+            <span className="tb-loading-dot-3 h-2 w-2 bg-current" />
           </span>
           <span>{loadingLabel}</span>
         </span>

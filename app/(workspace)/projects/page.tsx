@@ -1,16 +1,14 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import {
-  TeamDashboard,
-  type DashboardProjectCard,
-} from "@/components/dashboard/team-dashboard";
 import type { ProjectAccent } from "@/components/admin/types";
+import type { DashboardProjectCard } from "@/components/dashboard/team-dashboard";
+import { ProjectsDirectory } from "@/components/projects/projects-directory";
 import { prisma } from "@/lib/prisma";
 import { requireUserSession } from "@/lib/session";
 
 export const metadata: Metadata = {
-  title: "Project Dashboard — TECH BRO",
-  description: "Select a project card to open its Kanban board.",
+  title: "Projects — TECH BRO",
+  description: "Browse all assigned projects and open Kanban or Calendar views.",
 };
 
 function normalizeAccent(value: string): ProjectAccent {
@@ -18,7 +16,7 @@ function normalizeAccent(value: string): ProjectAccent {
   return "lime";
 }
 
-async function ProtectedDashboardContent() {
+async function ProjectsContent() {
   const session = await requireUserSession();
   const isAdmin = session.user.role === "admin";
 
@@ -81,30 +79,21 @@ async function ProtectedDashboardContent() {
     };
   });
 
-  return (
-    <TeamDashboard
-      currentUser={{
-        name: session.user.name,
-        email: session.user.email,
-        role: isAdmin ? "admin" : "member",
-      }}
-      projects={projects}
-    />
-  );
+  return <ProjectsDirectory projects={projects} isAdmin={isAdmin} />;
 }
 
-export default function DashboardPage() {
+export default function ProjectsPage() {
   return (
     <Suspense
       fallback={
-        <div className="tb-brutal-surface tb-grid-bg flex min-h-dvh items-center justify-center p-6">
+        <div className="flex flex-1 items-center justify-center p-6">
           <div className="rounded-[4px] border-[3px] border-[var(--tb-ink)] bg-[var(--tb-surface)] px-6 py-4 text-[15px] font-bold text-[var(--tb-ink)] shadow-[var(--tb-shadow-md)]">
             Loading projects...
           </div>
         </div>
       }
     >
-      <ProtectedDashboardContent />
+      <ProjectsContent />
     </Suspense>
   );
 }

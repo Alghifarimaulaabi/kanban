@@ -41,7 +41,7 @@ export function BrutalDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#171717]/55 p-4 sm:p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--tb-overlay)] p-4 sm:p-6"
       role="presentation"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
@@ -76,7 +76,7 @@ export function BrutalDialog({
             type="button"
             onClick={onClose}
             aria-label="Close modal"
-            className="tb-tactile-motion inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-bg)] text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)] hover:bg-[var(--tb-secondary)] focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]"
+            className="tb-tactile-motion inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-bg)] text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)] hover:bg-[var(--tb-secondary)] hover:text-[var(--tb-on-accent)] focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]"
           >
             <CloseIcon className="h-5 w-5" />
           </button>

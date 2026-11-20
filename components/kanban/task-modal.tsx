@@ -11,10 +11,48 @@ import {
   type KanbanMember,
   type KanbanTask,
   type QcRoleTag,
+  type TaskActivityItem,
   type TaskCommentItem,
   type TaskPriority,
   type TaskStatus,
 } from "./types";
+
+type SideTab = "qc" | "activity";
+
+const ACTIVITY_BADGE: Record<string, { label: string; style: string }> = {
+  TASK_CREATED: {
+    label: "CREATED",
+    style: "bg-[var(--tb-primary)] text-[var(--tb-on-accent)]",
+  },
+  STATUS_CHANGED: {
+    label: "STATUS",
+    style: "bg-[var(--tb-accent)] text-[var(--tb-on-accent)]",
+  },
+  PRIORITY_CHANGED: {
+    label: "PRIORITY",
+    style: "bg-[var(--tb-amber)] text-[var(--tb-on-accent)]",
+  },
+  ASSIGNEE_CHANGED: {
+    label: "ASSIGNEE",
+    style: "bg-[var(--tb-bg)] text-[var(--tb-ink)]",
+  },
+  PROGRESS_UPDATED: {
+    label: "PROGRESS",
+    style: "bg-[var(--tb-primary)] text-[var(--tb-on-accent)]",
+  },
+  SCHEDULE_UPDATED: {
+    label: "SCHEDULE",
+    style: "bg-[var(--tb-amber)] text-[var(--tb-on-accent)]",
+  },
+  DETAILS_UPDATED: {
+    label: "EDIT",
+    style: "bg-[var(--tb-bg)] text-[var(--tb-ink)]",
+  },
+  COMMENT_ADDED: {
+    label: "QC NOTE",
+    style: "bg-[var(--tb-secondary)] text-[var(--tb-on-accent)]",
+  },
+};
 
 interface DraftNote {
   id: string;
@@ -29,11 +67,16 @@ interface TaskModalProps {
   members: KanbanMember[];
   currentUserName: string;
   defaultStatus?: TaskStatus;
+  defaultDueDate?: string;
   editingTask?: KanbanTask | null;
   onTaskCreated: (task: KanbanTask) => void;
   onTaskUpdated: (task: KanbanTask) => void;
   onTaskDeleted: (taskId: string) => void;
-  onCommentAdded: (taskId: string, comment: TaskCommentItem) => void;
+  onCommentAdded: (
+    taskId: string,
+    comment: TaskCommentItem,
+    activity?: TaskActivityItem,
+  ) => void;
 }
 
 function formatCommentTime(iso: string): string {
@@ -52,6 +95,7 @@ export function TaskModal({
   members,
   currentUserName,
   defaultStatus = "BACKLOG",
+  defaultDueDate = "",
   editingTask,
   onTaskCreated,
   onTaskUpdated,
@@ -72,16 +116,22 @@ export function TaskModal({
   );
   const [assigneeId, setAssigneeId] = useState(editingTask?.assigneeId ?? "");
   const [startDate, setStartDate] = useState(editingTask?.startDate ?? "");
-  const [dueDate, setDueDate] = useState(editingTask?.dueDate ?? "");
+  const [dueDate, setDueDate] = useState(
+    editingTask?.dueDate ?? defaultDueDate,
+  );
   const [progress, setProgress] = useState<number>(editingTask?.progress ?? 0);
 
   const [formError, setFormError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Column 2: Catatan QC (QC & PIC comments)
+  // Column 2: Tab Catatan QC & Activity Log
+  const [sideTab, setSideTab] = useState<SideTab>("qc");
   const [comments, setComments] = useState<TaskCommentItem[]>(
     editingTask?.comments ?? [],
+  );
+  const [activities, setActivities] = useState<TaskActivityItem[]>(
+    editingTask?.activities ?? [],
   );
   const [draftNotes, setDraftNotes] = useState<DraftNote[]>([]);
   const [noteInput, setNoteInput] = useState("");
@@ -258,6 +308,7 @@ export function TaskModal({
       );
       const data = (await res.json().catch(() => null)) as {
         comment?: TaskCommentItem;
+        activity?: TaskActivityItem;
         error?: string;
       } | null;
 
@@ -267,7 +318,10 @@ export function TaskModal({
       }
 
       setComments((prev) => [...prev, data.comment!]);
-      onCommentAdded(editingTask.id, data.comment);
+      if (data.activity) {
+        setActivities((prev) => [data.activity!, ...prev]);
+      }
+      onCommentAdded(editingTask.id, data.comment, data.activity);
       setNoteInput("");
     } catch {
       setNoteError("Gagal mengirim catatan QC.");
@@ -281,7 +335,7 @@ export function TaskModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#171717]/60 p-3 sm:p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--tb-overlay)] p-3 sm:p-6"
       role="presentation"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
@@ -311,7 +365,7 @@ export function TaskModal({
             type="button"
             onClick={onClose}
             aria-label="Close modal"
-            className="tb-tactile-motion inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-surface)] text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)] hover:bg-[var(--tb-secondary)]"
+            className="tb-tactile-motion inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-surface)] text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)] hover:bg-[var(--tb-secondary)] hover:text-[var(--tb-on-accent)]"
           >
             <CloseIcon className="h-5 w-5" />
           </button>
@@ -472,7 +526,7 @@ export function TaskModal({
                 >
                   Progress
                 </label>
-                <span className="rounded-[2px] border-2 border-[var(--tb-ink)] bg-[var(--tb-primary)] px-2 py-0.5 text-[13px] font-bold tabular-nums text-[var(--tb-ink)]">
+                <span className="rounded-[2px] border-2 border-[var(--tb-ink)] bg-[var(--tb-primary)] px-2 py-0.5 text-[13px] font-bold tabular-nums text-[var(--tb-on-accent)]">
                   {progress}%
                 </span>
               </div>
@@ -493,7 +547,7 @@ export function TaskModal({
                 step={5}
                 value={progress}
                 onChange={(e) => setProgress(Number(e.target.value))}
-                className="w-full cursor-pointer accent-[#171717]"
+                className="w-full cursor-pointer accent-[var(--tb-ink)]"
               />
 
               <div className="flex items-center justify-between gap-1.5">
@@ -506,7 +560,7 @@ export function TaskModal({
                       "cursor-pointer rounded-[2px] border-2 border-[var(--tb-ink)] px-2 py-0.5 text-[11px] font-bold tabular-nums",
                       progress === step
                         ? "bg-[var(--tb-ink)] text-[var(--tb-surface)]"
-                        : "bg-[var(--tb-surface)] text-[var(--tb-ink)] hover:bg-[var(--tb-primary)]",
+                        : "bg-[var(--tb-surface)] text-[var(--tb-ink)] hover:bg-[var(--tb-primary)] hover:text-[var(--tb-on-accent)]",
                     ].join(" ")}
                   >
                     {step}%
@@ -522,7 +576,7 @@ export function TaskModal({
                   type="button"
                   onClick={handleDelete}
                   disabled={isDeleting || isSaving}
-                  className="tb-tactile-motion inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-secondary)] px-3.5 text-[13px] font-bold text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)] hover:brightness-95 disabled:opacity-60"
+                  className="tb-tactile-motion inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-secondary)] px-3.5 text-[13px] font-bold text-[var(--tb-on-accent)] shadow-[var(--tb-shadow-xs)] hover:brightness-95 disabled:opacity-60"
                 >
                   <TrashIcon className="h-4 w-4" />
                   <span>{isDeleting ? "Deleting..." : "Delete Task"}</span>
@@ -553,176 +607,279 @@ export function TaskModal({
             </div>
           </form>
 
-          {/* KOLOM 2: Catatan QC (Bug Findings & PIC Fix Notes) */}
+          {/* KOLOM 2: Tab Catatan QC & Activity Log */}
           <aside className="flex flex-col border-t-[3px] border-[var(--tb-ink)] bg-[var(--tb-bg)] lg:overflow-hidden lg:border-t-0">
-            <div className="border-b-2 border-[var(--tb-ink)] bg-[var(--tb-surface)] px-5 py-3.5">
-              <div className="flex items-center justify-between gap-2">
-                <h3 className="text-[16px] font-bold text-[var(--tb-ink)]">
-                  Catatan QC
-                </h3>
-                <span className="rounded-[2px] border-2 border-[var(--tb-ink)] bg-[var(--tb-secondary)] px-2 py-0.5 text-[11px] font-bold uppercase text-[var(--tb-ink)]">
-                  QC &amp; PIC
-                </span>
+            {/* Tab Switcher Header */}
+            <div className="border-b-2 border-[var(--tb-ink)] bg-[var(--tb-surface)] px-4 pt-3 pb-3">
+              <div
+                role="tablist"
+                aria-label="Panel QA/QC dan Activity Log"
+                className="grid grid-cols-2 gap-2"
+              >
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={sideTab === "qc"}
+                  onClick={() => setSideTab("qc")}
+                  className={[
+                    "tb-tactile-motion inline-flex min-h-[40px] cursor-pointer items-center justify-center gap-1.5 rounded-[3px] border-2 border-[var(--tb-ink)] px-2.5 text-[12px] font-bold uppercase tracking-[0.04em]",
+                    sideTab === "qc"
+                      ? "bg-[var(--tb-secondary)] text-[var(--tb-on-accent)] shadow-[var(--tb-shadow-xs)]"
+                      : "bg-[var(--tb-bg)] text-[var(--tb-ink)] hover:bg-[var(--tb-surface-focus)]",
+                  ].join(" ")}
+                >
+                  <span>Catatan QC</span>
+                  <span className="rounded-[2px] border border-[var(--tb-ink)] bg-[var(--tb-surface)] px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-[var(--tb-ink)]">
+                    {isEditMode ? comments.length : draftNotes.length}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={sideTab === "activity"}
+                  onClick={() => setSideTab("activity")}
+                  className={[
+                    "tb-tactile-motion inline-flex min-h-[40px] cursor-pointer items-center justify-center gap-1.5 rounded-[3px] border-2 border-[var(--tb-ink)] px-2.5 text-[12px] font-bold uppercase tracking-[0.04em]",
+                    sideTab === "activity"
+                      ? "bg-[var(--tb-accent)] text-[var(--tb-on-accent)] shadow-[var(--tb-shadow-xs)]"
+                      : "bg-[var(--tb-bg)] text-[var(--tb-ink)] hover:bg-[var(--tb-surface-focus)]",
+                  ].join(" ")}
+                >
+                  <span>Activity Log</span>
+                  <span className="rounded-[2px] border border-[var(--tb-ink)] bg-[var(--tb-surface)] px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-[var(--tb-ink)]">
+                    {activities.length}
+                  </span>
+                </button>
               </div>
-              <p className="mt-0.5 text-[12px] font-medium text-[var(--tb-ink-muted)]">
-                Khusus laporan bug dari QC &amp; update perbaikan dari PIC.
+              <p className="mt-2 text-[12px] font-medium text-[var(--tb-ink-muted)]">
+                {sideTab === "qc"
+                  ? "Khusus laporan bug dari QC & update perbaikan dari PIC."
+                  : "Riwayat otomatis perpindahan kolom, perubahan field, & catatan QC."}
               </p>
             </div>
 
-            {/* Comments List */}
-            <div className="flex-1 space-y-3 overflow-y-auto p-4 min-h-[200px] max-h-[340px] lg:max-h-none">
-              {isEditMode ? (
-                comments.length === 0 ? (
+            {sideTab === "qc" ? (
+              <>
+                {/* Comments List */}
+                <div className="flex-1 space-y-3 overflow-y-auto p-4 min-h-[200px] max-h-[340px] lg:max-h-none">
+                  {isEditMode ? (
+                    comments.length === 0 ? (
+                      <div className="rounded-[3px] border-2 border-dashed border-[var(--tb-ink)]/50 bg-[var(--tb-surface)]/70 p-4 text-center text-[13px] font-medium text-[var(--tb-ink-muted)]">
+                        Belum ada catatan QC atau perbaikan bug untuk task ini.
+                      </div>
+                    ) : (
+                      comments.map((comment) => (
+                        <div
+                          key={comment.id}
+                          className="rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-surface)] p-3 shadow-[var(--tb-shadow-xs)]"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={[
+                                  "rounded-[2px] border-2 border-[var(--tb-ink)] px-1.5 py-0.5 text-[10px] font-bold uppercase text-[var(--tb-on-accent)]",
+                                  comment.roleTag === "QC"
+                                    ? "bg-[var(--tb-secondary)]"
+                                    : "bg-[var(--tb-primary)]",
+                                ].join(" ")}
+                              >
+                                {comment.roleTag}
+                              </span>
+                              <span className="text-[13px] font-bold text-[var(--tb-ink)]">
+                                {comment.author.name}
+                              </span>
+                            </div>
+                            <span className="text-[11px] font-medium text-[var(--tb-ink-muted)]">
+                              {formatCommentTime(comment.createdAt)}
+                            </span>
+                          </div>
+                          <p className="mt-2 whitespace-pre-wrap text-[13px] font-medium leading-relaxed text-[var(--tb-ink)]">
+                            {comment.content}
+                          </p>
+                        </div>
+                      ))
+                    )
+                  ) : draftNotes.length === 0 ? (
+                    <div className="rounded-[3px] border-2 border-dashed border-[var(--tb-ink)]/50 bg-[var(--tb-surface)]/70 p-4 text-center text-[13px] font-medium text-[var(--tb-ink-muted)]">
+                      Tambahkan catatan awal QC/PIC di bawah jika perlu (akan tersimpan saat task dibuat).
+                    </div>
+                  ) : (
+                    draftNotes.map((note) => (
+                      <div
+                        key={note.id}
+                        className="rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-surface)] p-3 shadow-[var(--tb-shadow-xs)]"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={[
+                                "rounded-[2px] border-2 border-[var(--tb-ink)] px-1.5 py-0.5 text-[10px] font-bold uppercase text-[var(--tb-on-accent)]",
+                                note.roleTag === "QC"
+                                  ? "bg-[var(--tb-secondary)]"
+                                  : "bg-[var(--tb-primary)]",
+                              ].join(" ")}
+                            >
+                              {note.roleTag}
+                            </span>
+                            <span className="text-[13px] font-bold text-[var(--tb-ink)]">
+                              {currentUserName}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setDraftNotes((prev) =>
+                                prev.filter((item) => item.id !== note.id),
+                              )
+                            }
+                            className="cursor-pointer text-[11px] font-bold text-[var(--tb-error)] hover:underline"
+                          >
+                            Hapus
+                          </button>
+                        </div>
+                        <p className="mt-2 whitespace-pre-wrap text-[13px] font-medium leading-relaxed text-[var(--tb-ink)]">
+                          {note.content}
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Composer */}
+                <div className="border-t-2 border-[var(--tb-ink)] bg-[var(--tb-surface)] p-4">
+                  <div className="mb-2 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setNoteRoleTag("QC")}
+                      className={[
+                        "cursor-pointer rounded-[2px] border-2 border-[var(--tb-ink)] px-2.5 py-1 text-[11px] font-bold",
+                        noteRoleTag === "QC"
+                          ? "bg-[var(--tb-secondary)] text-[var(--tb-on-accent)] shadow-[var(--tb-shadow-xs)]"
+                          : "bg-[var(--tb-bg)] text-[var(--tb-ink-muted)]",
+                      ].join(" ")}
+                    >
+                      QC • Temuan Bug
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNoteRoleTag("PIC")}
+                      className={[
+                        "cursor-pointer rounded-[2px] border-2 border-[var(--tb-ink)] px-2.5 py-1 text-[11px] font-bold",
+                        noteRoleTag === "PIC"
+                          ? "bg-[var(--tb-primary)] text-[var(--tb-on-accent)] shadow-[var(--tb-shadow-xs)]"
+                          : "bg-[var(--tb-bg)] text-[var(--tb-ink-muted)]",
+                      ].join(" ")}
+                    >
+                      PIC • Perbaikan Bug
+                    </button>
+                  </div>
+
+                  <textarea
+                    rows={3}
+                    value={noteInput}
+                    onChange={(e) => setNoteInput(e.target.value)}
+                    placeholder={
+                      noteRoleTag === "QC"
+                        ? "Tulis temuan bug, langkah reproduksi, atau catatan revisi..."
+                        : "Tulis catatan perbaikan bug atau hasil verifikasi PIC..."
+                    }
+                    className="block w-full resize-none rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-bg)] px-3 py-2 text-[13px] font-medium text-[var(--tb-ink)] placeholder:text-[var(--tb-placeholder)] focus:bg-[var(--tb-surface)] focus:outline-none"
+                  />
+
+                  {noteError ? (
+                    <p className="mt-1.5 text-[12px] font-bold text-[var(--tb-error)]">
+                      {noteError}
+                    </p>
+                  ) : null}
+
+                  <div className="mt-2.5 flex items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--tb-ink-muted)]">
+                      <span className="inline-flex h-5 w-5 items-center justify-center rounded-[2px] border border-[var(--tb-ink)] bg-[var(--tb-accent)] text-[9px] font-bold text-[var(--tb-on-accent)]">
+                        {getInitials(currentUserName)}
+                      </span>
+                      {currentUserName}
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={handleAddNote}
+                      disabled={isPostingNote || !noteInput.trim()}
+                      className="tb-tactile-motion inline-flex min-h-[38px] cursor-pointer items-center rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-ink)] px-3.5 text-[12px] font-bold text-[var(--tb-surface)] shadow-[var(--tb-shadow-xs)] hover:bg-[var(--tb-ink-muted)] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {isPostingNote
+                        ? "Mengirim..."
+                        : isEditMode
+                          ? "Kirim Catatan"
+                          : "Tambah Catatan"}
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              /* Activity Log Timeline */
+              <div className="flex-1 space-y-2.5 overflow-y-auto p-4 min-h-[260px] max-h-[420px] lg:max-h-none">
+                {!isEditMode ? (
+                  <div className="rounded-[3px] border-2 border-dashed border-[var(--tb-ink)]/50 bg-[var(--tb-surface)]/80 p-4 text-[13px] font-medium text-[var(--tb-ink-muted)]">
+                    <p className="font-bold text-[var(--tb-ink)]">
+                      Preview Activity Log
+                    </p>
+                    <p className="mt-1">
+                      Begitu kamu klik <span className="font-bold text-[var(--tb-ink)]">CREATE TASK</span>, sistem akan otomatis mencatat:
+                    </p>
+                    <ul className="mt-2 list-disc space-y-1 pl-4 text-[12px]">
+                      <li>Pembuatan task oleh <span className="font-bold text-[var(--tb-ink)]">{currentUserName}</span></li>
+                      {draftNotes.length > 0 ? (
+                        <li>{draftNotes.length} catatan awal QC/PIC yang ditambahkan</li>
+                      ) : null}
+                      <li>Setiap perpindahan kolom, perubahan jadwal, progress, &amp; catatan QC berikutnya</li>
+                    </ul>
+                  </div>
+                ) : activities.length === 0 ? (
                   <div className="rounded-[3px] border-2 border-dashed border-[var(--tb-ink)]/50 bg-[var(--tb-surface)]/70 p-4 text-center text-[13px] font-medium text-[var(--tb-ink-muted)]">
-                    Belum ada catatan QC atau perbaikan bug untuk task ini.
+                    Belum ada riwayat aktivitas tercatat untuk task ini.
                   </div>
                 ) : (
-                  comments.map((comment) => (
-                    <div
-                      key={comment.id}
-                      className="rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-surface)] p-3 shadow-[var(--tb-shadow-xs)]"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={[
-                              "rounded-[2px] border-2 border-[var(--tb-ink)] px-1.5 py-0.5 text-[10px] font-bold uppercase",
-                              comment.roleTag === "QC"
-                                ? "bg-[var(--tb-secondary)]"
-                                : "bg-[var(--tb-primary)]",
-                            ].join(" ")}
-                          >
-                            {comment.roleTag}
-                          </span>
-                          <span className="text-[13px] font-bold text-[var(--tb-ink)]">
-                            {comment.author.name}
+                  activities.map((activity) => {
+                    const badge = ACTIVITY_BADGE[activity.action] ?? {
+                      label: "UPDATE",
+                      style: "bg-[var(--tb-bg)] text-[var(--tb-ink)]",
+                    };
+                    return (
+                      <div
+                        key={activity.id}
+                        className="rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-surface)] p-3 shadow-[var(--tb-shadow-xs)]"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[2px] border border-[var(--tb-ink)] bg-[var(--tb-accent)] text-[10px] font-bold text-[var(--tb-on-accent)]">
+                              {getInitials(activity.actor.name)}
+                            </span>
+                            <span className="truncate text-[12px] font-bold text-[var(--tb-ink)]">
+                              {activity.actor.name}
+                            </span>
+                            <span
+                              className={[
+                                "shrink-0 rounded-[2px] border border-[var(--tb-ink)] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.04em]",
+                                badge.style,
+                              ].join(" ")}
+                            >
+                              {badge.label}
+                            </span>
+                          </div>
+                          <span className="shrink-0 text-[10px] font-semibold text-[var(--tb-ink-muted)]">
+                            {formatCommentTime(activity.createdAt)}
                           </span>
                         </div>
-                        <span className="text-[11px] font-medium text-[var(--tb-ink-muted)]">
-                          {formatCommentTime(comment.createdAt)}
-                        </span>
+                        <p className="mt-2 text-[13px] font-medium leading-snug text-[var(--tb-ink)]">
+                          {activity.summary}
+                        </p>
                       </div>
-                      <p className="mt-2 whitespace-pre-wrap text-[13px] font-medium leading-relaxed text-[var(--tb-ink)]">
-                        {comment.content}
-                      </p>
-                    </div>
-                  ))
-                )
-              ) : draftNotes.length === 0 ? (
-                <div className="rounded-[3px] border-2 border-dashed border-[var(--tb-ink)]/50 bg-[var(--tb-surface)]/70 p-4 text-center text-[13px] font-medium text-[var(--tb-ink-muted)]">
-                  Tambahkan catatan awal QC/PIC di bawah jika perlu (akan tersimpan saat task dibuat).
-                </div>
-              ) : (
-                draftNotes.map((note) => (
-                  <div
-                    key={note.id}
-                    className="rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-surface)] p-3 shadow-[var(--tb-shadow-xs)]"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={[
-                            "rounded-[2px] border-2 border-[var(--tb-ink)] px-1.5 py-0.5 text-[10px] font-bold uppercase",
-                            note.roleTag === "QC"
-                              ? "bg-[var(--tb-secondary)]"
-                              : "bg-[var(--tb-primary)]",
-                          ].join(" ")}
-                        >
-                          {note.roleTag}
-                        </span>
-                        <span className="text-[13px] font-bold text-[var(--tb-ink)]">
-                          {currentUserName}
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setDraftNotes((prev) =>
-                            prev.filter((item) => item.id !== note.id),
-                          )
-                        }
-                        className="cursor-pointer text-[11px] font-bold text-[var(--tb-error)] hover:underline"
-                      >
-                        Hapus
-                      </button>
-                    </div>
-                    <p className="mt-2 whitespace-pre-wrap text-[13px] font-medium leading-relaxed text-[var(--tb-ink)]">
-                      {note.content}
-                    </p>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {/* Composer */}
-            <div className="border-t-2 border-[var(--tb-ink)] bg-[var(--tb-surface)] p-4">
-              <div className="mb-2 flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setNoteRoleTag("QC")}
-                  className={[
-                    "cursor-pointer rounded-[2px] border-2 border-[var(--tb-ink)] px-2.5 py-1 text-[11px] font-bold",
-                    noteRoleTag === "QC"
-                      ? "bg-[var(--tb-secondary)] text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)]"
-                      : "bg-[var(--tb-bg)] text-[var(--tb-ink-muted)]",
-                  ].join(" ")}
-                >
-                  QC • Temuan Bug
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setNoteRoleTag("PIC")}
-                  className={[
-                    "cursor-pointer rounded-[2px] border-2 border-[var(--tb-ink)] px-2.5 py-1 text-[11px] font-bold",
-                    noteRoleTag === "PIC"
-                      ? "bg-[var(--tb-primary)] text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)]"
-                      : "bg-[var(--tb-bg)] text-[var(--tb-ink-muted)]",
-                  ].join(" ")}
-                >
-                  PIC • Perbaikan Bug
-                </button>
+                    );
+                  })
+                )}
               </div>
-
-              <textarea
-                rows={3}
-                value={noteInput}
-                onChange={(e) => setNoteInput(e.target.value)}
-                placeholder={
-                  noteRoleTag === "QC"
-                    ? "Tulis temuan bug, langkah reproduksi, atau catatan revisi..."
-                    : "Tulis catatan perbaikan bug atau hasil verifikasi PIC..."
-                }
-                className="block w-full resize-none rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-bg)] px-3 py-2 text-[13px] font-medium text-[var(--tb-ink)] placeholder:text-[var(--tb-placeholder)] focus:bg-[var(--tb-surface)] focus:outline-none"
-              />
-
-              {noteError ? (
-                <p className="mt-1.5 text-[12px] font-bold text-[var(--tb-error)]">
-                  {noteError}
-                </p>
-              ) : null}
-
-              <div className="mt-2.5 flex items-center justify-between gap-2">
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--tb-ink-muted)]">
-                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-[2px] border border-[var(--tb-ink)] bg-[var(--tb-accent)] text-[9px] font-bold text-[var(--tb-ink)]">
-                    {getInitials(currentUserName)}
-                  </span>
-                  {currentUserName}
-                </span>
-
-                <button
-                  type="button"
-                  onClick={handleAddNote}
-                  disabled={isPostingNote || !noteInput.trim()}
-                  className="tb-tactile-motion inline-flex min-h-[38px] cursor-pointer items-center rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-ink)] px-3.5 text-[12px] font-bold text-[var(--tb-surface)] shadow-[var(--tb-shadow-xs)] hover:bg-[var(--tb-ink-muted)] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {isPostingNote
-                    ? "Mengirim..."
-                    : isEditMode
-                      ? "Kirim Catatan"
-                      : "Tambah Catatan"}
-                </button>
-              </div>
-            </div>
+            )}
           </aside>
         </div>
       </div>

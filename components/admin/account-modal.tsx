@@ -194,7 +194,7 @@ export function AccountModal({
                   setErrors((prev) => ({ ...prev, password: undefined }));
                 }
               }}
-              className="tb-tactile-motion inline-flex min-h-[48px] shrink-0 cursor-pointer items-center gap-1.5 rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-bg)] px-3.5 text-[13px] font-bold text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)] hover:bg-[var(--tb-primary)] focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]"
+              className="tb-tactile-motion inline-flex min-h-[48px] shrink-0 cursor-pointer items-center gap-1.5 rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-bg)] px-3.5 text-[13px] font-bold text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)] hover:bg-[var(--tb-primary)] hover:text-[var(--tb-on-accent)] focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]"
             >
               <KeyIcon className="h-4 w-4" />
               <span>Generate</span>
@@ -235,15 +235,15 @@ export function AccountModal({
                     "tb-tactile-motion flex min-h-[64px] cursor-pointer flex-col items-start justify-center rounded-[3px] border-2 border-[var(--tb-ink)] px-3.5 py-2.5 text-left",
                     "focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]",
                     selected
-                      ? `${item.activeBg} shadow-[var(--tb-shadow-sm)]`
-                      : "bg-[var(--tb-surface)] hover:bg-[var(--tb-bg)]",
+                      ? `${item.activeBg} text-[var(--tb-on-accent)] shadow-[var(--tb-shadow-sm)]`
+                      : "bg-[var(--tb-surface)] text-[var(--tb-ink)] hover:bg-[var(--tb-bg)]",
                   ].join(" ")}
                 >
-                  <span className="flex items-center gap-1.5 text-[14px] font-bold text-[var(--tb-ink)]">
+                  <span className="flex items-center gap-1.5 text-[14px] font-bold">
                     {selected ? <CheckIcon className="h-4 w-4" /> : null}
                     {item.label}
                   </span>
-                  <span className="mt-0.5 text-[12px] font-medium leading-tight text-[var(--tb-ink)]">
+                  <span className="mt-0.5 text-[12px] font-medium leading-tight opacity-90">
                     {item.detail}
                   </span>
                 </button>
@@ -284,7 +284,7 @@ export function AccountModal({
                             "inline-flex h-5 w-5 items-center justify-center rounded-[2px] border-2 border-[var(--tb-ink)]",
                             "peer-focus-visible:outline-solid peer-focus-visible:outline-[3px] peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[var(--tb-ink)]",
                             checked
-                              ? "bg-[var(--tb-primary)]"
+                              ? "bg-[var(--tb-primary)] text-[var(--tb-on-accent)]"
                               : "bg-[var(--tb-surface)]",
                           ].join(" ")}
                         >

@@ -7,7 +7,9 @@ export async function proxy(request: NextRequest) {
 
   const isAdminRoute = pathname.startsWith("/admin");
   const isProtectedAppRoute =
-    pathname.startsWith("/dashboard") || pathname.startsWith("/projects");
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/projects") ||
+    pathname.startsWith("/settings");
 
   if (isAdminRoute || isProtectedAppRoute) {
     const sessionCookie = getSessionCookie(request);
@@ -39,5 +41,7 @@ export const config = {
     "/dashboard/:path*",
     "/projects",
     "/projects/:path*",
+    "/settings",
+    "/settings/:path*",
   ],
 };

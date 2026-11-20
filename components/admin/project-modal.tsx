@@ -239,7 +239,7 @@ export function ProjectModal({
                   onClick={() => setAccent(option.value)}
                   aria-pressed={selected}
                   className={[
-                    "tb-tactile-motion flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-[3px] border-2 border-[var(--tb-ink)] px-2.5 py-2 text-[13px] font-bold text-[var(--tb-ink)]",
+                    "tb-tactile-motion flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-[3px] border-2 border-[var(--tb-ink)] px-2.5 py-2 text-[13px] font-bold text-[var(--tb-on-accent)]",
                     "focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]",
                     option.bg,
                     selected
@@ -286,7 +286,7 @@ export function ProjectModal({
                           "inline-flex h-5 w-5 items-center justify-center rounded-[2px] border-2 border-[var(--tb-ink)]",
                           "peer-focus-visible:outline-solid peer-focus-visible:outline-[3px] peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[var(--tb-ink)]",
                           checked
-                            ? "bg-[var(--tb-primary)]"
+                            ? "bg-[var(--tb-primary)] text-[var(--tb-on-accent)]"
                             : "bg-[var(--tb-surface)]",
                         ].join(" ")}
                       >
@@ -308,7 +308,7 @@ export function ProjectModal({
 
                   <span
                     className={[
-                      "shrink-0 rounded-[2px] border-2 border-[var(--tb-ink)] px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.05em] text-[var(--tb-ink)]",
+                      "shrink-0 rounded-[2px] border-2 border-[var(--tb-ink)] px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.05em] text-[var(--tb-on-accent)]",
                       account.role === "admin"
                         ? "bg-[var(--tb-secondary)]"
                         : "bg-[var(--tb-accent)]",

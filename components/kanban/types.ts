@@ -29,6 +29,28 @@ export interface TaskCommentItem {
   };
 }
 
+export type TaskActivityAction =
+  | "TASK_CREATED"
+  | "STATUS_CHANGED"
+  | "PRIORITY_CHANGED"
+  | "ASSIGNEE_CHANGED"
+  | "PROGRESS_UPDATED"
+  | "SCHEDULE_UPDATED"
+  | "DETAILS_UPDATED"
+  | "COMMENT_ADDED";
+
+export interface TaskActivityItem {
+  id: string;
+  action: TaskActivityAction | string;
+  summary: string;
+  createdAt: string;
+  actor: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
 export interface KanbanTask {
   id: string;
   title: string;
@@ -45,19 +67,51 @@ export interface KanbanTask {
     email: string;
   } | null;
   comments: TaskCommentItem[];
+  activities: TaskActivityItem[];
 }
 
 export const KANBAN_COLUMNS: {
   id: TaskStatus;
   label: string;
   headerBg: string;
+  headerInk: string;
 }[] = [
-  { id: "BACKLOG", label: "Backlog", headerBg: "bg-[var(--tb-bg)]" },
-  { id: "TODO", label: "To Do", headerBg: "bg-[var(--tb-surface)]" },
-  { id: "REVISION", label: "Revision", headerBg: "bg-[var(--tb-secondary)]" },
-  { id: "IN_PROGRESS", label: "In Progress", headerBg: "bg-[var(--tb-accent)]" },
-  { id: "IN_REVIEW", label: "In Review", headerBg: "bg-[#fde68a]" },
-  { id: "DONE", label: "Done", headerBg: "bg-[var(--tb-primary)]" },
+  {
+    id: "BACKLOG",
+    label: "Backlog",
+    headerBg: "bg-[var(--tb-bg)]",
+    headerInk: "text-[var(--tb-ink)]",
+  },
+  {
+    id: "TODO",
+    label: "To Do",
+    headerBg: "bg-[var(--tb-surface)]",
+    headerInk: "text-[var(--tb-ink)]",
+  },
+  {
+    id: "REVISION",
+    label: "Revision",
+    headerBg: "bg-[var(--tb-secondary)]",
+    headerInk: "text-[var(--tb-on-accent)]",
+  },
+  {
+    id: "IN_PROGRESS",
+    label: "In Progress",
+    headerBg: "bg-[var(--tb-accent)]",
+    headerInk: "text-[var(--tb-on-accent)]",
+  },
+  {
+    id: "IN_REVIEW",
+    label: "In Review",
+    headerBg: "bg-[var(--tb-amber)]",
+    headerInk: "text-[var(--tb-on-accent)]",
+  },
+  {
+    id: "DONE",
+    label: "Done",
+    headerBg: "bg-[var(--tb-primary)]",
+    headerInk: "text-[var(--tb-on-accent)]",
+  },
 ];
 
 export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {

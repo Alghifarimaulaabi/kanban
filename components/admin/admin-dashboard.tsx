@@ -3,14 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { authClient } from "@/lib/auth-client";
 import { BrutalButton } from "@/components/login/brutal-button";
-import { TechBroMark } from "@/components/login/icons";
 import { AccountModal } from "./account-modal";
 import {
   CloseIcon,
   FolderBoardIcon,
-  LogOutIcon,
   PlusIcon,
   SearchIcon,
   TrashIcon,
@@ -34,16 +31,11 @@ const ACCENT_BG: Record<ProjectAccent, string> = {
 };
 
 interface AdminDashboardProps {
-  currentAdmin: {
-    name: string;
-    email: string;
-  };
   initialAccounts: AdminAccount[];
   initialProjects: AdminProject[];
 }
 
 export function AdminDashboard({
-  currentAdmin,
   initialAccounts,
   initialProjects,
 }: AdminDashboardProps) {
@@ -51,7 +43,6 @@ export function AdminDashboard({
   const [activeTab, setActiveTab] = useState<ActiveTab>("projects");
   const [projects, setProjects] = useState<AdminProject[]>(initialProjects);
   const [accounts, setAccounts] = useState<AdminAccount[]>(initialAccounts);
-  const [isSigningOut, setIsSigningOut] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
@@ -293,68 +284,14 @@ export function AdminDashboard({
     return projects.filter((p) => p.memberIds.includes(accountId)).length;
   }
 
-  async function handleSignOut() {
-    setIsSigningOut(true);
-    await authClient.signOut();
-    router.push("/login");
-    router.refresh();
-  }
-
   return (
-    <div className="tb-brutal-surface tb-grid-bg min-h-dvh w-full overflow-x-clip">
+    <div className="flex-1 w-full">
       <a
         href="#admin-main"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-[2px] focus:border-2 focus:border-[var(--tb-ink)] focus:bg-[var(--tb-primary)] focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-[var(--tb-ink)] focus:shadow-[var(--tb-shadow-sm)]"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-[2px] focus:border-2 focus:border-[var(--tb-ink)] focus:bg-[var(--tb-primary)] focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-[var(--tb-on-accent)] focus:shadow-[var(--tb-shadow-sm)]"
       >
         Skip to admin workspace
       </a>
-
-      {/* Top Navigation Shell */}
-      <header className="sticky top-0 z-30 border-b-[3px] border-[var(--tb-ink)] bg-[var(--tb-surface)]">
-        <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-3 px-4 py-3 sm:px-8">
-          <div className="flex items-center gap-3">
-            <span className="inline-flex shadow-[var(--tb-shadow-xs)]">
-              <TechBroMark className="h-9 w-9" />
-            </span>
-            <span className="text-[20px] font-bold tracking-[0.06em] text-[var(--tb-ink)]">
-              TECH BRO
-            </span>
-            <span className="rounded-[2px] border-2 border-[var(--tb-ink)] bg-[var(--tb-secondary)] px-2 py-0.5 text-[11px] font-bold tracking-[0.08em] text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)]">
-              ADMIN
-            </span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href="/dashboard"
-              className="tb-tactile-motion inline-flex min-h-[44px] items-center rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-primary)] px-3.5 text-[13px] font-bold text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)] hover:bg-[var(--tb-primary-hover)] focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]"
-            >
-              Dashboard
-            </Link>
-
-            <div className="hidden items-center gap-2 rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-bg)] px-3 py-1.5 sm:flex">
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded-[2px] border-2 border-[var(--tb-ink)] bg-[var(--tb-primary)] text-[11px] font-bold text-[var(--tb-ink)]">
-                {getInitials(currentAdmin.name)}
-              </span>
-              <span className="text-[13px] font-bold text-[var(--tb-ink)]">
-                {currentAdmin.name}
-              </span>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleSignOut}
-              disabled={isSigningOut}
-              className="tb-tactile-motion inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-surface)] px-3.5 text-[13px] font-bold text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)] hover:bg-[var(--tb-bg)] focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <LogOutIcon className="h-4 w-4" />
-              <span className="hidden sm:inline">
-                {isSigningOut ? "Signing out..." : "Sign out"}
-              </span>
-            </button>
-          </div>
-        </div>
-      </header>
 
       <main
         id="admin-main"
@@ -400,14 +337,14 @@ export function AdminDashboard({
           <div
             role="status"
             aria-live="polite"
-            className="mt-5 flex items-center justify-between gap-3 rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-primary)] px-4 py-3 text-[14px] font-bold text-[var(--tb-ink)] shadow-[var(--tb-shadow-sm)]"
+            className="mt-5 flex items-center justify-between gap-3 rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-primary)] px-4 py-3 text-[14px] font-bold text-[var(--tb-on-accent)] shadow-[var(--tb-shadow-sm)]"
           >
             <span>{statusMessage}</span>
             <button
               type="button"
               onClick={() => setStatusMessage(null)}
               aria-label="Dismiss notification"
-              className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-[2px] border-2 border-[var(--tb-ink)] bg-[var(--tb-surface)] text-[var(--tb-ink)] hover:bg-[var(--tb-secondary)] focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]"
+              className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-[2px] border-2 border-[var(--tb-ink)] bg-[var(--tb-surface)] text-[var(--tb-ink)] hover:bg-[var(--tb-secondary)] hover:text-[var(--tb-on-accent)] focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]"
             >
               <CloseIcon className="h-4 w-4" />
             </button>
@@ -445,7 +382,7 @@ export function AdminDashboard({
                 className={[
                   "rounded-[2px] border border-[var(--tb-ink)] px-1.5 py-0.5 text-[11px] font-bold tabular-nums",
                   activeTab === "projects"
-                    ? "bg-[var(--tb-primary)] text-[var(--tb-ink)]"
+                    ? "bg-[var(--tb-primary)] text-[var(--tb-on-accent)]"
                     : "bg-[var(--tb-bg)] text-[var(--tb-ink)]",
                 ].join(" ")}
               >
@@ -477,7 +414,7 @@ export function AdminDashboard({
                 className={[
                   "rounded-[2px] border border-[var(--tb-ink)] px-1.5 py-0.5 text-[11px] font-bold tabular-nums",
                   activeTab === "accounts"
-                    ? "bg-[var(--tb-accent)] text-[var(--tb-ink)]"
+                    ? "bg-[var(--tb-accent)] text-[var(--tb-on-accent)]"
                     : "bg-[var(--tb-bg)] text-[var(--tb-ink)]",
                 ].join(" ")}
               >
@@ -575,7 +512,7 @@ export function AdminDashboard({
                           <div className="flex flex-wrap items-center gap-2">
                             <span
                               className={[
-                                "rounded-[2px] border-2 border-[var(--tb-ink)] px-2.5 py-0.5 text-[12px] font-bold tracking-[0.07em] text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)]",
+                                "rounded-[2px] border-2 border-[var(--tb-ink)] px-2.5 py-0.5 text-[12px] font-bold tracking-[0.07em] text-[var(--tb-on-accent)] shadow-[var(--tb-shadow-xs)]",
                                 ACCENT_BG[project.accent],
                               ].join(" ")}
                             >
@@ -591,7 +528,7 @@ export function AdminDashboard({
                               <button
                                 type="button"
                                 onClick={() => handleDeleteProject(project.id)}
-                                className="inline-flex min-h-[38px] cursor-pointer items-center rounded-[2px] border-2 border-[var(--tb-ink)] bg-[var(--tb-secondary)] px-2.5 text-[12px] font-bold text-[var(--tb-ink)] hover:brightness-95 focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]"
+                                className="inline-flex min-h-[38px] cursor-pointer items-center rounded-[2px] border-2 border-[var(--tb-ink)] bg-[var(--tb-secondary)] px-2.5 text-[12px] font-bold text-[var(--tb-on-accent)] hover:brightness-95 focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]"
                               >
                                 Delete
                               </button>
@@ -608,7 +545,7 @@ export function AdminDashboard({
                               type="button"
                               onClick={() => setConfirmDeleteProjectId(project.id)}
                               aria-label={`Delete ${project.name}`}
-                              className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-[3px] border-2 border-transparent text-[var(--tb-ink)] hover:border-[var(--tb-ink)] hover:bg-[var(--tb-secondary)] focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]"
+                              className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-[3px] border-2 border-transparent text-[var(--tb-ink)] hover:border-[var(--tb-ink)] hover:bg-[var(--tb-secondary)] hover:text-[var(--tb-on-accent)] focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]"
                             >
                               <TrashIcon className="h-4 w-4" />
                             </button>
@@ -644,14 +581,14 @@ export function AdminDashboard({
                               className={[
                                 "rounded-[2px] border-2 border-[var(--tb-ink)] px-2 py-1.5",
                                 project.stages.revision > 0
-                                  ? "bg-[var(--tb-secondary)]"
-                                  : "bg-[var(--tb-bg)]",
+                                  ? "bg-[var(--tb-secondary)] text-[var(--tb-on-accent)]"
+                                  : "bg-[var(--tb-bg)] text-[var(--tb-ink)]",
                               ].join(" ")}
                             >
-                              <dt className="text-[11px] font-bold text-[var(--tb-ink)]">
+                              <dt className="text-[11px] font-bold">
                                 Revision
                               </dt>
-                              <dd className="text-[15px] font-bold tabular-nums text-[var(--tb-ink)]">
+                              <dd className="text-[15px] font-bold tabular-nums">
                                 {project.stages.revision}
                               </dd>
                             </div>
@@ -676,7 +613,7 @@ export function AdminDashboard({
                                 key={member.id}
                                 title={`${member.name} (${member.role})`}
                                 className={[
-                                  "inline-flex h-8 w-8 items-center justify-center rounded-[2px] border-2 border-[var(--tb-ink)] text-[11px] font-bold text-[var(--tb-ink)]",
+                                  "inline-flex h-8 w-8 items-center justify-center rounded-[2px] border-2 border-[var(--tb-ink)] text-[11px] font-bold text-[var(--tb-on-accent)]",
                                   member.role === "admin"
                                     ? "bg-[var(--tb-secondary)]"
                                     : "bg-[var(--tb-accent)]",
@@ -695,7 +632,7 @@ export function AdminDashboard({
                         <div className="flex shrink-0 items-center gap-2">
                           <Link
                             href={`/projects/${project.id}`}
-                            className="tb-tactile-motion inline-flex min-h-[44px] items-center rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-primary)] px-3.5 text-[13px] font-bold text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)] hover:bg-[var(--tb-primary-hover)] focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]"
+                            className="tb-tactile-motion inline-flex min-h-[44px] items-center rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-primary)] px-3.5 text-[13px] font-bold text-[var(--tb-on-accent)] shadow-[var(--tb-shadow-xs)] hover:bg-[var(--tb-primary-hover)] focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]"
                           >
                             Open Board
                           </Link>
@@ -767,7 +704,7 @@ export function AdminDashboard({
                                 <div className="flex items-center gap-3">
                                   <span
                                     className={[
-                                      "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[3px] border-2 border-[var(--tb-ink)] text-[13px] font-bold text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)]",
+                                      "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[3px] border-2 border-[var(--tb-ink)] text-[13px] font-bold text-[var(--tb-on-accent)] shadow-[var(--tb-shadow-xs)]",
                                       account.role === "admin"
                                         ? "bg-[var(--tb-secondary)]"
                                         : "bg-[var(--tb-accent)]",
@@ -779,7 +716,7 @@ export function AdminDashboard({
                                     <p className="text-[15px] font-bold text-[var(--tb-ink)]">
                                       {account.name}
                                       {account.isCurrentAdmin ? (
-                                        <span className="ml-2 rounded-[2px] border-2 border-[var(--tb-ink)] bg-[var(--tb-primary)] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.05em]">
+                                        <span className="ml-2 rounded-[2px] border-2 border-[var(--tb-ink)] bg-[var(--tb-primary)] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.05em] text-[var(--tb-on-accent)]">
                                           YOU
                                         </span>
                                       ) : null}
@@ -794,7 +731,7 @@ export function AdminDashboard({
                               <td className="px-5 py-4">
                                 <span
                                   className={[
-                                    "inline-flex rounded-[2px] border-2 border-[var(--tb-ink)] px-2.5 py-0.5 text-[12px] font-bold uppercase tracking-[0.06em] text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)]",
+                                    "inline-flex rounded-[2px] border-2 border-[var(--tb-ink)] px-2.5 py-0.5 text-[12px] font-bold uppercase tracking-[0.06em] text-[var(--tb-on-accent)] shadow-[var(--tb-shadow-xs)]",
                                     account.role === "admin"
                                       ? "bg-[var(--tb-secondary)]"
                                       : "bg-[var(--tb-accent)]",
@@ -825,7 +762,7 @@ export function AdminDashboard({
                                     <button
                                       type="button"
                                       onClick={() => handleDeleteAccount(account.id)}
-                                      className="inline-flex min-h-[40px] cursor-pointer items-center rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-secondary)] px-3 text-[13px] font-bold text-[var(--tb-ink)] focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]"
+                                      className="inline-flex min-h-[40px] cursor-pointer items-center rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-secondary)] px-3 text-[13px] font-bold text-[var(--tb-on-accent)] focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]"
                                     >
                                       Confirm remove
                                     </button>
@@ -852,7 +789,7 @@ export function AdminDashboard({
                                       type="button"
                                       onClick={() => setConfirmDeleteAccountId(account.id)}
                                       aria-label={`Remove ${account.name}`}
-                                      className="inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-surface)] text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)] hover:bg-[var(--tb-secondary)] focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]"
+                                      className="inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-surface)] text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)] hover:bg-[var(--tb-secondary)] hover:text-[var(--tb-on-accent)] focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]"
                                     >
                                       <TrashIcon className="h-4 w-4" />
                                     </button>
@@ -878,7 +815,7 @@ export function AdminDashboard({
                             <div className="flex min-w-0 items-center gap-3">
                               <span
                                 className={[
-                                  "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[3px] border-2 border-[var(--tb-ink)] text-[13px] font-bold text-[var(--tb-ink)]",
+                                  "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[3px] border-2 border-[var(--tb-ink)] text-[13px] font-bold text-[var(--tb-on-accent)]",
                                   account.role === "admin"
                                     ? "bg-[var(--tb-secondary)]"
                                     : "bg-[var(--tb-accent)]",
@@ -898,7 +835,7 @@ export function AdminDashboard({
 
                             <span
                               className={[
-                                "shrink-0 rounded-[2px] border-2 border-[var(--tb-ink)] px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--tb-ink)]",
+                                "shrink-0 rounded-[2px] border-2 border-[var(--tb-ink)] px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--tb-on-accent)]",
                                 account.role === "admin"
                                   ? "bg-[var(--tb-secondary)]"
                                   : "bg-[var(--tb-accent)]",
@@ -923,7 +860,7 @@ export function AdminDashboard({
                                   <button
                                     type="button"
                                     onClick={() => handleDeleteAccount(account.id)}
-                                    className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-secondary)] px-3 text-[13px] font-bold text-[var(--tb-ink)]"
+                                    className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-secondary)] px-3 text-[13px] font-bold text-[var(--tb-on-accent)]"
                                   >
                                     Confirm remove
                                   </button>
@@ -950,7 +887,7 @@ export function AdminDashboard({
                                     type="button"
                                     onClick={() => setConfirmDeleteAccountId(account.id)}
                                     aria-label={`Remove ${account.name}`}
-                                    className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-surface)] text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)] hover:bg-[var(--tb-secondary)]"
+                                    className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-surface)] text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)] hover:bg-[var(--tb-secondary)] hover:text-[var(--tb-on-accent)]"
                                   >
                                     <TrashIcon className="h-4 w-4" />
                                   </button>

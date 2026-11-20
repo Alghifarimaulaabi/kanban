@@ -36,10 +36,21 @@ export function LoginForm() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notice, setNotice] = useState<StatusNotice | null>(null);
+  const [retryAfterSeconds, setRetryAfterSeconds] = useState(0);
 
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const noticeRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (retryAfterSeconds <= 0) return;
+
+    const timer = window.setInterval(() => {
+      setRetryAfterSeconds((prev) => (prev <= 1 ? 0 : prev - 1));
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [retryAfterSeconds]);
 
   useEffect(() => {
     if (notice && noticeRef.current) {
@@ -112,17 +123,51 @@ export function LoginForm() {
       return;
     }
 
+    if (retryAfterSeconds > 0) {
+      return;
+    }
+
     setIsSubmitting(true);
 
+    let capturedRetryAfter: number | null = null;
+    let capturedRateLimited = false;
+
     try {
-      const result = await authClient.signIn.email({
-        email: email.trim().toLowerCase(),
-        password,
-        rememberMe,
-      });
+      const result = await authClient.signIn.email(
+        {
+          email: email.trim().toLowerCase(),
+          password,
+          rememberMe,
+        },
+        {
+          onError(context) {
+            if (context.response?.status === 429) {
+              capturedRateLimited = true;
+              const rawHeader =
+                context.response.headers.get("X-Retry-After") ??
+                context.response.headers.get("Retry-After");
+              const parsed = rawHeader ? Number.parseInt(rawHeader, 10) : NaN;
+              capturedRetryAfter =
+                Number.isFinite(parsed) && parsed > 0 ? parsed : 60;
+            }
+          },
+        },
+      );
 
       if (result.error) {
         setIsSubmitting(false);
+
+        if (capturedRateLimited || result.error.status === 429) {
+          const waitSeconds = capturedRetryAfter ?? 60;
+          setRetryAfterSeconds(waitSeconds);
+          setNotice({
+            tone: "error",
+            title: "Too many login attempts",
+            message: `Terlalu banyak percobaan login dari IP ini. Silakan tunggu ${waitSeconds} detik sebelum mencoba lagi.`,
+          });
+          return;
+        }
+
         setNotice({
           tone: "error",
           title: "Sign-in failed",
@@ -184,7 +229,7 @@ export function LoginForm() {
                 notice.tone === "error"
                   ? "border-[var(--tb-error)] bg-[var(--tb-error-bg)] text-[var(--tb-error)] shadow-[var(--tb-shadow-error)]"
                   : notice.tone === "success"
-                    ? "border-[var(--tb-ink)] bg-[var(--tb-primary)] text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)]"
+                    ? "border-[var(--tb-ink)] bg-[var(--tb-primary)] text-[var(--tb-on-accent)] shadow-[var(--tb-shadow-xs)]"
                     : "border-[var(--tb-ink)] bg-[var(--tb-bg)] text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)]",
               ].join(" ")}
             >
@@ -196,7 +241,11 @@ export function LoginForm() {
                     ) : null}
                     <span>{notice.title}</span>
                   </p>
-                  <p className="mt-0.5 font-medium">{notice.message}</p>
+                  <p className="mt-0.5 font-medium">
+                    {retryAfterSeconds > 0
+                      ? `Terlalu banyak percobaan login dari IP ini. Silakan tunggu ${retryAfterSeconds} detik sebelum mencoba lagi.`
+                      : notice.message}
+                  </p>
                   {notice.showSignOut ? (
                     <button
                       type="button"
@@ -211,7 +260,7 @@ export function LoginForm() {
                   type="button"
                   onClick={() => setNotice(null)}
                   aria-label="Dismiss notice"
-                  className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-[2px] border-2 border-[var(--tb-ink)] bg-[var(--tb-surface)] text-[18px] font-bold leading-none text-[var(--tb-ink)] hover:bg-[var(--tb-secondary)] focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]"
+                  className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-[2px] border-2 border-[var(--tb-ink)] bg-[var(--tb-surface)] text-[18px] font-bold leading-none text-[var(--tb-ink)] hover:bg-[var(--tb-secondary)] hover:text-[var(--tb-on-accent)] focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]"
                 >
                   ×
                 </button>
@@ -301,7 +350,7 @@ export function LoginForm() {
                     ].join(" ")}
                   >
                     {rememberMe ? (
-                      <CheckIcon className="h-3.5 w-3.5 text-[var(--tb-ink)]" />
+                      <CheckIcon className="h-3.5 w-3.5 text-[var(--tb-on-accent)]" />
                     ) : null}
                   </span>
                 </span>
@@ -309,22 +358,6 @@ export function LoginForm() {
                   Remember me
                 </span>
               </label>
-
-              <button
-                type="button"
-                disabled={isSubmitting}
-                onClick={() =>
-                  setNotice({
-                    tone: "info",
-                    title: "Need a password reset?",
-                    message:
-                      "Contact your TECH BRO workspace administrator to reset your password.",
-                  })
-                }
-                className="inline-flex min-h-[44px] cursor-pointer items-center rounded-[2px] px-1.5 text-[14px] font-bold text-[var(--tb-ink)] underline decoration-2 underline-offset-4 transition-colors hover:bg-[var(--tb-primary)] focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Forgot password?
-              </button>
             </div>
 
             <div className="pt-1">
@@ -332,10 +365,17 @@ export function LoginForm() {
                 type="submit"
                 variant="primary"
                 isLoading={isSubmitting}
+                disabled={retryAfterSeconds > 0}
                 loadingLabel="ENTERING WORKSPACE..."
               >
-                <span>LET&apos;S GO!</span>
-                <ArrowRightIcon className="h-5 w-5" />
+                {retryAfterSeconds > 0 ? (
+                  <span>TUNGGU {retryAfterSeconds} DETIK...</span>
+                ) : (
+                  <>
+                    <span>LET&apos;S GO!</span>
+                    <ArrowRightIcon className="h-5 w-5" />
+                  </>
+                )}
               </BrutalButton>
             </div>
           </form>
