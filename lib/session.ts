@@ -8,11 +8,25 @@ export async function getServerSession() {
   });
 }
 
+export async function requireUserSession() {
+  const session = await getServerSession();
+
+  if (!session) {
+    redirect("/login");
+  }
+
+  return session;
+}
+
 export async function requireAdminSession() {
   const session = await getServerSession();
 
-  if (!session || session.user.role !== "admin") {
+  if (!session) {
     redirect("/login");
+  }
+
+  if (session.user.role !== "admin") {
+    redirect("/dashboard");
   }
 
   return session;

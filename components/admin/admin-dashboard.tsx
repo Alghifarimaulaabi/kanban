@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { authClient } from "@/lib/auth-client";
@@ -18,8 +19,6 @@ import {
 import { ProjectModal } from "./project-modal";
 import {
   getInitials,
-  INITIAL_ACCOUNTS,
-  INITIAL_PROJECTS,
   type AccountRole,
   type AdminAccount,
   type AdminProject,
@@ -34,32 +33,24 @@ const ACCENT_BG: Record<ProjectAccent, string> = {
   violet: "bg-[var(--tb-accent)]",
 };
 
-function formatToday(): string {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date());
-}
-
 interface AdminDashboardProps {
   currentAdmin: {
     name: string;
     email: string;
   };
+  initialAccounts: AdminAccount[];
+  initialProjects: AdminProject[];
 }
 
-export function AdminDashboard({ currentAdmin }: AdminDashboardProps) {
+export function AdminDashboard({
+  currentAdmin,
+  initialAccounts,
+  initialProjects,
+}: AdminDashboardProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<ActiveTab>("projects");
-  const [projects, setProjects] = useState<AdminProject[]>(INITIAL_PROJECTS);
-  const [accounts, setAccounts] = useState<AdminAccount[]>(() =>
-    INITIAL_ACCOUNTS.map((account) =>
-      account.isCurrentAdmin
-        ? { ...account, name: currentAdmin.name, email: currentAdmin.email }
-        : account,
-    ),
-  );
+  const [projects, setProjects] = useState<AdminProject[]>(initialProjects);
+  const [accounts, setAccounts] = useState<AdminAccount[]>(initialAccounts);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -118,15 +109,28 @@ export function AdminDashboard({ currentAdmin }: AdminDashboardProps) {
     setIsAccountModalOpen(true);
   }
 
-  function handleSaveProject(payload: {
+  async function handleSaveProject(payload: {
     id?: string;
     name: string;
     code: string;
     description: string;
     accent: ProjectAccent;
     memberIds: string[];
-  }) {
+  }): Promise<string | void> {
     if (payload.id) {
+      const response = await fetch(`/api/admin/projects/${payload.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = (await response.json().catch(() => null)) as {
+        error?: string;
+      } | null;
+
+      if (!response.ok) {
+        return data?.error || "Failed to update project.";
+      }
+
       setProjects((prev) =>
         prev.map((project) =>
           project.id === payload.id
@@ -144,56 +148,73 @@ export function AdminDashboard({ currentAdmin }: AdminDashboardProps) {
       setStatusMessage(
         `Updated project "${payload.name}" (${payload.memberIds.length} assigned).`,
       );
+      router.refresh();
     } else {
-      const nextProject: AdminProject = {
-        id: `prj-${Date.now()}`,
-        code: payload.code,
-        name: payload.name,
-        description: payload.description,
-        accent: payload.accent,
-        memberIds: payload.memberIds,
-        stages: {
-          backlog: 0,
-          todo: 0,
-          revision: 0,
-          inProgress: 0,
-          inReview: 0,
-          done: 0,
-        },
-        createdAt: formatToday(),
-      };
-      setProjects((prev) => [nextProject, ...prev]);
+      const response = await fetch("/api/admin/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = (await response.json().catch(() => null)) as {
+        project?: AdminProject;
+        error?: string;
+      } | null;
+
+      if (!response.ok || !data?.project) {
+        return data?.error || "Failed to create project.";
+      }
+
+      setProjects((prev) => [data.project!, ...prev]);
       setActiveTab("projects");
       setStatusMessage(
-        `Created project "${payload.name}" — now visible on the client dashboard for ${payload.memberIds.length} member(s).`,
+        `Created project "${payload.name}" — now visible on the team dashboard for ${payload.memberIds.length} member(s).`,
       );
+      router.refresh();
     }
   }
 
-  function handleDeleteProject(projectId: string) {
+  async function handleDeleteProject(projectId: string) {
     const target = projects.find((p) => p.id === projectId);
+    const response = await fetch(`/api/admin/projects/${projectId}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      setStatusMessage("Failed to remove project. Please try again.");
+      return;
+    }
+
     setProjects((prev) => prev.filter((p) => p.id !== projectId));
     setConfirmDeleteProjectId(null);
     if (target) {
       setStatusMessage(`Removed project "${target.name}" from the workspace.`);
     }
+    router.refresh();
   }
 
-  function handleAddAccount(payload: {
+  async function handleAddAccount(payload: {
     name: string;
     email: string;
     role: AccountRole;
     password: string;
     projectIds: string[];
-  }) {
-    const newAccount: AdminAccount = {
-      id: `usr-${Date.now()}`,
-      name: payload.name,
-      email: payload.email,
-      role: payload.role,
-      createdAt: formatToday(),
-    };
+  }): Promise<string | void> {
+    const response = await fetch("/api/admin/accounts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
+    const data = (await response.json().catch(() => null)) as {
+      account?: AdminAccount;
+      error?: string;
+    } | null;
+
+    if (!response.ok || !data?.account) {
+      return data?.error || "Failed to create team account.";
+    }
+
+    const newAccount = data.account;
     setAccounts((prev) => [newAccount, ...prev]);
 
     if (payload.projectIds.length > 0) {
@@ -202,7 +223,9 @@ export function AdminDashboard({ currentAdmin }: AdminDashboardProps) {
           payload.projectIds.includes(project.id)
             ? {
                 ...project,
-                memberIds: Array.from(new Set([...project.memberIds, newAccount.id])),
+                memberIds: Array.from(
+                  new Set([...project.memberIds, newAccount.id]),
+                ),
               }
             : project,
         ),
@@ -211,24 +234,48 @@ export function AdminDashboard({ currentAdmin }: AdminDashboardProps) {
 
     setActiveTab("accounts");
     setStatusMessage(
-      `Provisioned ${payload.role} account for ${payload.name} (${payload.email}).`,
+      `Provisioned ${payload.role} account for ${newAccount.name} (${newAccount.email}).`,
     );
+    router.refresh();
   }
 
-  function handleToggleAccountRole(accountId: string) {
-    setAccounts((prev) =>
-      prev.map((account) => {
-        if (account.id !== accountId || account.isCurrentAdmin) return account;
-        const nextRole: AccountRole = account.role === "admin" ? "member" : "admin";
-        setStatusMessage(`Changed ${account.name}'s role to ${nextRole}.`);
-        return { ...account, role: nextRole };
-      }),
-    );
-  }
-
-  function handleDeleteAccount(accountId: string) {
+  async function handleToggleAccountRole(accountId: string) {
     const target = accounts.find((a) => a.id === accountId);
     if (!target || target.isCurrentAdmin) return;
+
+    const nextRole: AccountRole = target.role === "admin" ? "member" : "admin";
+    const response = await fetch(`/api/admin/accounts/${accountId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role: nextRole }),
+    });
+
+    if (!response.ok) {
+      setStatusMessage("Failed to update role. Please try again.");
+      return;
+    }
+
+    setAccounts((prev) =>
+      prev.map((account) =>
+        account.id === accountId ? { ...account, role: nextRole } : account,
+      ),
+    );
+    setStatusMessage(`Changed ${target.name}'s role to ${nextRole}.`);
+    router.refresh();
+  }
+
+  async function handleDeleteAccount(accountId: string) {
+    const target = accounts.find((a) => a.id === accountId);
+    if (!target || target.isCurrentAdmin) return;
+
+    const response = await fetch(`/api/admin/accounts/${accountId}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      setStatusMessage("Failed to remove account. Please try again.");
+      return;
+    }
 
     setAccounts((prev) => prev.filter((a) => a.id !== accountId));
     setProjects((prev) =>
@@ -239,6 +286,7 @@ export function AdminDashboard({ currentAdmin }: AdminDashboardProps) {
     );
     setConfirmDeleteAccountId(null);
     setStatusMessage(`Removed account for ${target.name} (${target.email}).`);
+    router.refresh();
   }
 
   function getAssignedProjectCount(accountId: string): number {
@@ -277,6 +325,13 @@ export function AdminDashboard({ currentAdmin }: AdminDashboardProps) {
           </div>
 
           <div className="flex items-center gap-3">
+            <Link
+              href="/dashboard"
+              className="tb-tactile-motion inline-flex min-h-[44px] items-center rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-primary)] px-3.5 text-[13px] font-bold text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)] hover:bg-[var(--tb-primary-hover)] focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]"
+            >
+              Dashboard
+            </Link>
+
             <div className="hidden items-center gap-2 rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-bg)] px-3 py-1.5 sm:flex">
               <span className="inline-flex h-6 w-6 items-center justify-center rounded-[2px] border-2 border-[var(--tb-ink)] bg-[var(--tb-primary)] text-[11px] font-bold text-[var(--tb-ink)]">
                 {getInitials(currentAdmin.name)}
@@ -637,13 +692,21 @@ export function AdminDashboard({ currentAdmin }: AdminDashboardProps) {
                           </span>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() => openEditProjectModal(project)}
-                          className="tb-tactile-motion inline-flex min-h-[44px] shrink-0 cursor-pointer items-center rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-surface)] px-3.5 text-[13px] font-bold text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)] hover:bg-[var(--tb-primary)] focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]"
-                        >
-                          Manage
-                        </button>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <Link
+                            href={`/projects/${project.id}`}
+                            className="tb-tactile-motion inline-flex min-h-[44px] items-center rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-primary)] px-3.5 text-[13px] font-bold text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)] hover:bg-[var(--tb-primary-hover)] focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]"
+                          >
+                            Open Board
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => openEditProjectModal(project)}
+                            className="tb-tactile-motion inline-flex min-h-[44px] cursor-pointer items-center rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-surface)] px-3.5 text-[13px] font-bold text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)] hover:bg-[var(--tb-bg)] focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]"
+                          >
+                            Manage
+                          </button>
+                        </div>
                       </div>
                     </article>
                   );

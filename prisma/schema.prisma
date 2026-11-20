@@ -97,8 +97,10 @@ model Verification {
 
 model Project {
   id          String          @id @default(cuid())
+  code        String          @default("PRJ")
   name        String
   description String?
+  accent      String          @default("lime")
   createdById String
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
@@ -127,6 +129,8 @@ model Task {
   status      TaskStatus   @default(BACKLOG)
   priority    TaskPriority @default(MEDIUM)
   position    Int          @default(0)
+  progress    Int          @default(0)
+  startDate   DateTime?
   dueDate     DateTime?
   projectId   String
   assigneeId  String?
@@ -143,6 +147,7 @@ model Task {
 model TaskComment {
   id        String   @id @default(cuid())
   content   String
+  roleTag   String   @default("QC")
   taskId    String
   authorId  String
   createdAt DateTime @default(now())

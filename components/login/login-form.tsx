@@ -138,17 +138,11 @@ export function LoginForm() {
 
       if (role === "admin") {
         router.push("/admin");
-        router.refresh();
-        return;
+      } else {
+        router.push("/dashboard");
       }
-
-      setIsSubmitting(false);
-      setNotice({
-        tone: "success",
-        title: "Signed in as Team Member",
-        message: `Authenticated as ${email.trim().toLowerCase()}. Admin Console is restricted to administrators; the client project dashboard will appear here once enabled.`,
-        showSignOut: true,
-      });
+      router.refresh();
+      return;
     } catch {
       setIsSubmitting(false);
       setNotice({

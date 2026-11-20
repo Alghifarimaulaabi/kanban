@@ -24,7 +24,7 @@ interface ProjectModalProps {
     description: string;
     accent: ProjectAccent;
     memberIds: string[];
-  }) => void;
+  }) => Promise<string | void>;
 }
 
 const ACCENT_OPTIONS: { value: ProjectAccent; label: string; bg: string }[] = [
@@ -56,7 +56,9 @@ export function ProjectModal({
     code?: string;
     description?: string;
     members?: string;
+    form?: string;
   }>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   function deriveCode(projectName: string) {
     const cleaned = projectName
@@ -83,7 +85,7 @@ export function ProjectModal({
     }
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const trimmedName = name.trim();
@@ -107,7 +109,8 @@ export function ProjectModal({
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
-    onSaveProject({
+    setIsSubmitting(true);
+    const serverError = await onSaveProject({
       id: editingProject?.id,
       name: trimmedName,
       code: resolvedCode.slice(0, 6),
@@ -115,6 +118,13 @@ export function ProjectModal({
       accent,
       memberIds,
     });
+    setIsSubmitting(false);
+
+    if (serverError) {
+      setErrors({ form: serverError });
+      return;
+    }
+
     onClose();
   }
 
@@ -132,6 +142,14 @@ export function ProjectModal({
       }
     >
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
+        {errors.form ? (
+          <div
+            role="alert"
+            className="rounded-[3px] border-2 border-[var(--tb-error)] bg-[var(--tb-error-bg)] px-3.5 py-2.5 text-[13px] font-bold text-[var(--tb-error)]"
+          >
+            {errors.form}
+          </div>
+        ) : null}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_130px]">
           <BrutalInput
             id="project-name"
@@ -325,6 +343,8 @@ export function ProjectModal({
           <BrutalButton
             type="submit"
             variant="primary"
+            isLoading={isSubmitting}
+            loadingLabel={isEditMode ? "SAVING..." : "CREATING..."}
             className="sm:w-auto sm:min-w-[180px]"
           >
             {isEditMode ? "SAVE CHANGES" : "CREATE PROJECT"}

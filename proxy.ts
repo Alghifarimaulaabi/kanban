@@ -5,7 +5,11 @@ import { auth } from "@/lib/auth";
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (pathname.startsWith("/admin")) {
+  const isAdminRoute = pathname.startsWith("/admin");
+  const isProtectedAppRoute =
+    pathname.startsWith("/dashboard") || pathname.startsWith("/projects");
+
+  if (isAdminRoute || isProtectedAppRoute) {
     const sessionCookie = getSessionCookie(request);
     if (!sessionCookie) {
       return NextResponse.redirect(new URL("/login", request.url));
@@ -15,8 +19,12 @@ export async function proxy(request: NextRequest) {
       headers: request.headers,
     });
 
-    if (!session || session.user.role !== "admin") {
+    if (!session) {
       return NextResponse.redirect(new URL("/login", request.url));
+    }
+
+    if (isAdminRoute && session.user.role !== "admin") {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   }
 
@@ -24,5 +32,12 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin", "/admin/:path*"],
+  matcher: [
+    "/admin",
+    "/admin/:path*",
+    "/dashboard",
+    "/dashboard/:path*",
+    "/projects",
+    "/projects/:path*",
+  ],
 };

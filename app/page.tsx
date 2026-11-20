@@ -9,6 +9,10 @@ async function RootRedirect(): Promise<null> {
     redirect("/admin");
   }
 
+  if (session) {
+    redirect("/dashboard");
+  }
+
   redirect("/login");
 }
 

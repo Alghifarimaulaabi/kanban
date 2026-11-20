@@ -19,7 +19,7 @@ interface AccountModalProps {
     role: AccountRole;
     password: string;
     projectIds: string[];
-  }) => void;
+  }) => Promise<string | void>;
 }
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -48,7 +48,9 @@ export function AccountModal({
     name?: string;
     email?: string;
     password?: string;
+    form?: string;
   }>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   function toggleProject(projectId: string) {
     setProjectIds((prev) =>
@@ -58,7 +60,7 @@ export function AccountModal({
     );
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const trimmedName = name.trim();
@@ -86,13 +88,21 @@ export function AccountModal({
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
-    onAddAccount({
+    setIsSubmitting(true);
+    const serverError = await onAddAccount({
       name: trimmedName,
       email: trimmedEmail,
       role,
       password,
       projectIds,
     });
+    setIsSubmitting(false);
+
+    if (serverError) {
+      setErrors({ form: serverError });
+      return;
+    }
+
     onClose();
   }
 
@@ -104,6 +114,14 @@ export function AccountModal({
       description="Provision a workspace login for a teammate. No public sign-up required."
     >
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
+        {errors.form ? (
+          <div
+            role="alert"
+            className="rounded-[3px] border-2 border-[var(--tb-error)] bg-[var(--tb-error-bg)] px-3.5 py-2.5 text-[13px] font-bold text-[var(--tb-error)]"
+          >
+            {errors.form}
+          </div>
+        ) : null}
         <BrutalInput
           id="account-name"
           label="Full Name"
@@ -299,6 +317,8 @@ export function AccountModal({
           <BrutalButton
             type="submit"
             variant="primary"
+            isLoading={isSubmitting}
+            loadingLabel="CREATING..."
             className="sm:w-auto sm:min-w-[180px]"
           >
             CREATE ACCOUNT

@@ -36,6 +36,10 @@ async function LoginGate() {
     redirect("/admin");
   }
 
+  if (session) {
+    redirect("/dashboard");
+  }
+
   return <LoginShell />;
 }
 
