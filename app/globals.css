@@ -3,6 +3,26 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* TECH BRO — Neo-Brutalism Design Tokens */
+  --tb-bg: #f5f0e8;
+  --tb-surface: #ffffff;
+  --tb-surface-focus: #fffdf8;
+  --tb-ink: #171717;
+  --tb-ink-muted: #45413b;
+  --tb-placeholder: #57534e;
+  --tb-primary: #b8f56a;
+  --tb-primary-hover: #a7eb50;
+  --tb-secondary: #ff8a65;
+  --tb-accent: #a78bfa;
+  --tb-error: #b91c1c;
+  --tb-error-bg: #fef2f2;
+  --tb-shadow-pressed: 1px 1px 0px #171717;
+  --tb-shadow-xs: 2px 2px 0px #171717;
+  --tb-shadow-sm: 4px 4px 0px #171717;
+  --tb-shadow-md: 6px 6px 0px #171717;
+  --tb-shadow-lg: 8px 8px 0px #171717;
+  --tb-shadow-error: 3px 3px 0px #b91c1c;
 }
 
 @theme inline {
@@ -10,6 +30,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-brutal: var(--font-space-grotesk);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -23,4 +44,77 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* TECH BRO scoped Neo-Brutalist surface & browser chrome */
+.tb-brutal-surface {
+  background-color: var(--tb-bg);
+  color: var(--tb-ink);
+  font-family: var(--font-space-grotesk), system-ui, -apple-system, sans-serif;
+  caret-color: var(--tb-ink);
+  color-scheme: light;
+}
+
+.tb-brutal-surface ::selection {
+  background-color: var(--tb-primary);
+  color: var(--tb-ink);
+}
+
+.tb-grid-bg {
+  background-color: var(--tb-bg);
+  background-image:
+    linear-gradient(to right, rgba(23, 23, 23, 0.065) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(23, 23, 23, 0.065) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.tb-brutal-surface ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.tb-brutal-surface ::-webkit-scrollbar-track {
+  background: var(--tb-bg);
+  border-left: 2px solid var(--tb-ink);
+}
+
+.tb-brutal-surface ::-webkit-scrollbar-thumb {
+  background: var(--tb-ink);
+  border: 2px solid var(--tb-bg);
+}
+
+@keyframes tb-block-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.tb-loading-dot {
+  animation: tb-block-pulse 0.9s steps(2, end) infinite;
+}
+
+.tb-loading-dot-2 {
+  animation: tb-block-pulse 0.9s steps(2, end) 0.2s infinite;
+}
+
+.tb-loading-dot-3 {
+  animation: tb-block-pulse 0.9s steps(2, end) 0.4s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tb-brutal-surface .tb-tactile-motion {
+    transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+    transform: none !important;
+  }
+
+  .tb-loading-dot,
+  .tb-loading-dot-2,
+  .tb-loading-dot-3 {
+    animation: none;
+    opacity: 1;
+  }
 }
