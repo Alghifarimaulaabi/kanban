@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { revalidateTaskViews } from "@/lib/my-tasks";
 import { prisma } from "@/lib/prisma";
 
 export async function DELETE(
@@ -17,6 +18,7 @@ export async function DELETE(
     where: { id: taskId },
     select: {
       id: true,
+      projectId: true,
       createdById: true,
       activities: {
         where: {
@@ -45,6 +47,7 @@ export async function DELETE(
   }
 
   await prisma.task.delete({ where: { id: task.id } });
+  revalidateTaskViews(task.projectId);
 
   return NextResponse.json({ ok: true, id: task.id });
 }

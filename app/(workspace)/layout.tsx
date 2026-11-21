@@ -2,6 +2,7 @@ import { Suspense, type ReactNode } from "react";
 import type { ProjectAccent } from "@/components/admin/types";
 import type { SidebarProject } from "@/components/layout/app-sidebar";
 import { WorkspaceShell } from "@/components/layout/workspace-shell";
+import { getMyCreatedTasksCount } from "@/lib/my-tasks";
 import { prisma } from "@/lib/prisma";
 import { requireUserSession } from "@/lib/session";
 
@@ -37,22 +38,7 @@ async function AuthenticatedWorkspaceLayout({
         accent: true,
       },
     }),
-    prisma.task.count({
-      where: {
-        OR: [
-          { createdById: session.user.id },
-          {
-            createdById: null,
-            activities: {
-              some: {
-                action: "TASK_CREATED",
-                actorId: session.user.id,
-              },
-            },
-          },
-        ],
-      },
-    }),
+    getMyCreatedTasksCount(session.user.id),
   ]);
 
   const projects: SidebarProject[] = dbProjects.map((project) => ({

@@ -96,8 +96,14 @@ export function KanbanBoard({
   currentUser,
 }: KanbanBoardProps) {
   const router = useRouter();
+  const [prevInitialTasks, setPrevInitialTasks] = useState(initialTasks);
   const [tasks, setTasks] = useState<KanbanTask[]>(initialTasks);
   const [activeView, setActiveView] = useState<ProjectViewTab>(initialView);
+
+  if (initialTasks !== prevInitialTasks) {
+    setPrevInitialTasks(initialTasks);
+    setTasks(initialTasks);
+  }
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<KanbanTask | null>(null);

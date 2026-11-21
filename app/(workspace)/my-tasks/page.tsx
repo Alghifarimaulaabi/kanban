@@ -1,12 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import type { ProjectAccent } from "@/components/admin/types";
-import {
-  MyTasksView,
-  type CreatedTaskItem,
-} from "@/components/tasks/my-tasks-view";
-import { prisma } from "@/lib/prisma";
-import { formatDateInput } from "@/lib/project-access";
+import { MyTasksView } from "@/components/tasks/my-tasks-view";
+import { getMyCreatedTasks } from "@/lib/my-tasks";
 import { requireUserSession } from "@/lib/session";
 
 export const metadata: Metadata = {
@@ -14,55 +9,9 @@ export const metadata: Metadata = {
   description: "View and delete tasks you created across workspace projects.",
 };
 
-function normalizeAccent(value: string): ProjectAccent {
-  if (value === "coral" || value === "violet") return value;
-  return "lime";
-}
-
 async function MyTasksContent() {
   const session = await requireUserSession();
-
-  const dbTasks = await prisma.task.findMany({
-    where: {
-      OR: [
-        { createdById: session.user.id },
-        {
-          createdById: null,
-          activities: {
-            some: {
-              action: "TASK_CREATED",
-              actorId: session.user.id,
-            },
-          },
-        },
-      ],
-    },
-    include: {
-      project: {
-        select: { id: true, code: true, name: true, accent: true },
-      },
-      assignee: {
-        select: { id: true, name: true },
-      },
-    },
-    orderBy: [{ createdAt: "desc" }],
-  });
-
-  const initialTasks: CreatedTaskItem[] = dbTasks.map((task) => ({
-    id: task.id,
-    title: task.title,
-    description: task.description ?? "",
-    status: task.status,
-    priority: task.priority,
-    progress: task.progress,
-    dueDate: formatDateInput(task.dueDate),
-    createdAt: task.createdAt.toISOString(),
-    projectId: task.project.id,
-    projectCode: task.project.code,
-    projectName: task.project.name,
-    projectAccent: normalizeAccent(task.project.accent),
-    assignee: task.assignee,
-  }));
+  const initialTasks = await getMyCreatedTasks(session.user.id);
 
   return <MyTasksView initialTasks={initialTasks} />;
 }

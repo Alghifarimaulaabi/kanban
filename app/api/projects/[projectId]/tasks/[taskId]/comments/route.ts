@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { revalidateTaskViews } from "@/lib/my-tasks";
 import { prisma } from "@/lib/prisma";
 import { canAccessProject } from "@/lib/project-access";
 
@@ -70,6 +71,8 @@ export async function POST(
       },
     }),
   ]);
+
+  revalidateTaskViews(projectId);
 
   return NextResponse.json(
     {

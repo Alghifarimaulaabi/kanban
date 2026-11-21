@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CloseIcon,
   SearchIcon,
@@ -73,6 +73,7 @@ function formatCreatedDate(iso: string): string {
 
 export function MyTasksView({ initialTasks }: MyTasksViewProps) {
   const router = useRouter();
+  const [prevInitialTasks, setPrevInitialTasks] = useState(initialTasks);
   const [tasks, setTasks] = useState<CreatedTaskItem[]>(initialTasks);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<TaskStatus | "ALL">("ALL");
@@ -82,6 +83,53 @@ export function MyTasksView({ initialTasks }: MyTasksViewProps) {
     tone: "success" | "error";
     message: string;
   } | null>(null);
+
+  if (initialTasks !== prevInitialTasks) {
+    setPrevInitialTasks(initialTasks);
+    setTasks(initialTasks);
+  }
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function syncCreatedTasks() {
+      try {
+        const response = await fetch("/api/my-tasks", {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        if (!response.ok) return;
+
+        const data = (await response.json().catch(() => null)) as {
+          tasks?: CreatedTaskItem[];
+        } | null;
+        if (!Array.isArray(data?.tasks)) return;
+
+        const nextTasks = data.tasks;
+        const isStaleSnapshot =
+          nextTasks.length !== initialTasks.length ||
+          nextTasks.some(
+            (item, index) =>
+              item.id !== initialTasks[index]?.id ||
+              item.status !== initialTasks[index]?.status ||
+              item.title !== initialTasks[index]?.title ||
+              item.progress !== initialTasks[index]?.progress ||
+              item.dueDate !== initialTasks[index]?.dueDate ||
+              item.assignee?.id !== initialTasks[index]?.assignee?.id,
+          );
+
+        if (isStaleSnapshot) {
+          setTasks(nextTasks);
+          router.refresh();
+        }
+      } catch {
+        // Ignore abort or transient network errors; SSR props remain visible.
+      }
+    }
+
+    void syncCreatedTasks();
+    return () => controller.abort();
+  }, [initialTasks, router]);
 
   const todayIso = new Date().toISOString().slice(0, 10);
 

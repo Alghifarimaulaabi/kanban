@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { TaskPriority, TaskStatus } from "@/app/generated/prisma/client";
 import { auth } from "@/lib/auth";
+import { revalidateTaskViews } from "@/lib/my-tasks";
 import { prisma } from "@/lib/prisma";
 import {
   canAccessProject,
@@ -152,6 +153,8 @@ export async function POST(
       },
     },
   });
+
+  revalidateTaskViews(projectId);
 
   return NextResponse.json(
     {
