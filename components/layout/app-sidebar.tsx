@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
 import { authClient } from "@/lib/auth-client";
 import {
   CloseIcon,
@@ -31,7 +31,10 @@ export interface SidebarProject {
 interface AppSidebarProps {
   currentUser: SidebarUser;
   projects: SidebarProject[];
+  myCreatedTasksCount: number;
   collapsed: boolean;
+  onExpand: () => void;
+  onCollapse: () => void;
   onToggleCollapse: () => void;
   mobileOpen: boolean;
   onCloseMobile: () => void;
@@ -59,6 +62,28 @@ function DashboardIcon({ className }: { className?: string }) {
       <rect x="11.5" y="2.5" width="6" height="6" />
       <rect x="2.5" y="11.5" width="6" height="6" />
       <rect x="11.5" y="11.5" width="6" height="6" />
+    </svg>
+  );
+}
+
+function MyTasksIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="square"
+      strokeLinejoin="miter"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M3 5.5L4.8 7.3L8 4" />
+      <path d="M10.5 5.5H17" />
+      <path d="M3 10.5L4.8 12.3L8 9" />
+      <path d="M10.5 10.5H17" />
+      <path d="M3 15.5H8" />
+      <path d="M10.5 15.5H17" />
     </svg>
   );
 }
@@ -113,7 +138,10 @@ function SidebarToggleIcon({
 export function AppSidebar({
   currentUser,
   projects,
+  myCreatedTasksCount,
   collapsed,
+  onExpand,
+  onCollapse,
   onToggleCollapse,
   mobileOpen,
   onCloseMobile,
@@ -124,60 +152,77 @@ export function AppSidebar({
 
   const isDashboardActive = pathname === "/dashboard";
   const isProjectsIndexActive = pathname === "/projects";
+  const isMyTasksActive = pathname.startsWith("/my-tasks");
   const isSettingsActive = pathname.startsWith("/settings");
   const isAdminActive = pathname.startsWith("/admin");
 
-  async function handleSignOut() {
+  async function handleSignOut(event: MouseEvent<HTMLButtonElement>) {
+    event.stopPropagation();
     setIsSigningOut(true);
     await authClient.signOut();
     router.push("/login");
     router.refresh();
   }
 
-  function renderNavContent(isCompact: boolean) {
+  function handleNavClick(
+    event: MouseEvent<HTMLAnchorElement>,
+    isMobileDrawer: boolean,
+  ) {
+    event.stopPropagation();
+    if (isMobileDrawer) {
+      onCloseMobile();
+      return;
+    }
+    if (!collapsed) {
+      onCollapse();
+    }
+  }
+
+  function renderNavContent(isCompact: boolean, isMobileDrawer: boolean) {
     return (
       <div className="flex h-full flex-col bg-[var(--tb-surface)]">
         {/* Brand Header */}
         <div
           className={[
-            "flex items-center border-b-[3px] border-[var(--tb-ink)] px-3 py-3.5",
-            isCompact ? "justify-center" : "justify-between gap-2 px-4",
+            "flex items-center border-b-[3px] border-[var(--tb-ink)] py-3.5",
+            isCompact
+              ? "flex-col gap-2.5 px-2"
+              : "justify-between gap-2 px-4",
           ].join(" ")}
         >
           <Link
             href="/dashboard"
-            onClick={onCloseMobile}
+            onClick={(event) => handleNavClick(event, isMobileDrawer)}
+            aria-label="TECH BRO — Dashboard"
+            title="TECH BRO — Dashboard"
             className="flex min-w-0 items-center gap-2.5 focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]"
           >
             <span className="inline-flex shrink-0 shadow-[var(--tb-shadow-xs)]">
               <TechBroMark className="h-9 w-9" />
             </span>
             {!isCompact ? (
-              <div className="min-w-0">
-                <span className="block truncate text-[17px] font-bold leading-none tracking-[0.06em] text-[var(--tb-ink)]">
-                  TECH BRO
-                </span>
-                <span className="mt-1 inline-block rounded-[2px] border border-[var(--tb-ink)] bg-[var(--tb-accent)] px-1.5 py-0.5 text-[9px] font-bold tracking-[0.08em] text-[var(--tb-on-accent)]">
-                  WORKSPACE
-                </span>
-              </div>
+              <span className="truncate text-[18px] font-bold leading-none tracking-[0.06em] text-[var(--tb-ink)]">
+                TECH BRO
+              </span>
             ) : null}
           </Link>
 
-          {/* Desktop collapse toggle (shown in header when expanded) */}
-          {!mobileOpen && !isCompact ? (
+          {/* Desktop Expand / Collapse Toggle */}
+          {!isMobileDrawer ? (
             <button
               type="button"
-              onClick={onToggleCollapse}
-              aria-label="Collapse sidebar"
-              title="Collapse sidebar"
-              className="hidden h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-bg)] text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)] hover:bg-[var(--tb-primary)] hover:text-[var(--tb-on-accent)] lg:inline-flex"
+              onClick={(event) => {
+                event.stopPropagation();
+                onToggleCollapse();
+              }}
+              aria-label={isCompact ? "Expand sidebar" : "Minimize sidebar"}
+              aria-expanded={!isCompact}
+              title={isCompact ? "Expand sidebar" : "Minimize sidebar"}
+              className="hidden h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-bg)] text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)] transition-colors hover:bg-[var(--tb-primary)] hover:text-[var(--tb-on-accent)] focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)] lg:inline-flex"
             >
-              <SidebarToggleIcon collapsed={false} className="h-4 w-4" />
+              <SidebarToggleIcon collapsed={isCompact} className="h-4 w-4" />
             </button>
-          ) : null}
-
-          {mobileOpen ? (
+          ) : (
             <button
               type="button"
               onClick={onCloseMobile}
@@ -186,47 +231,36 @@ export function AppSidebar({
             >
               <CloseIcon className="h-4 w-4" />
             </button>
-          ) : null}
+          )}
         </div>
-
-        {/* Collapse button when compact on desktop */}
-        {isCompact && !mobileOpen ? (
-          <div className="hidden justify-center border-b-2 border-[var(--tb-ink)] py-2 lg:flex">
-            <button
-              type="button"
-              onClick={onToggleCollapse}
-              aria-label="Expand sidebar"
-              title="Expand sidebar"
-              className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-bg)] text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)] hover:bg-[var(--tb-primary)] hover:text-[var(--tb-on-accent)]"
-            >
-              <SidebarToggleIcon collapsed={true} className="h-4 w-4" />
-            </button>
-          </div>
-        ) : null}
 
         {/* Main Navigation */}
         <nav
           aria-label="Workspace navigation"
-          className="flex-1 overflow-y-auto px-3 py-4"
+          className={[
+            "flex-1 overflow-y-auto py-3.5",
+            isCompact ? "px-2" : "px-3",
+          ].join(" ")}
         >
           {!isCompact ? (
-            <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--tb-ink-muted)]">
-              Menu Utama
+            <p className="mb-2 px-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--tb-ink-muted)]">
+              Workspace
             </p>
           ) : null}
 
-          <ul className="space-y-2">
+          <ul className="space-y-1.5">
             <li>
               <Link
                 href="/dashboard"
-                onClick={onCloseMobile}
+                onClick={(event) => handleNavClick(event, isMobileDrawer)}
                 title="Dashboard"
+                aria-label="Dashboard"
                 className={[
-                  "tb-tactile-motion flex min-h-[44px] items-center gap-3 rounded-[3px] border-2 border-[var(--tb-ink)] px-3 text-[13px] font-bold transition-colors",
+                  "tb-tactile-motion flex min-h-[42px] items-center gap-3 rounded-[3px] border-2 px-2.5 text-[13px] font-bold transition-colors focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]",
                   isCompact ? "justify-center px-0" : "",
                   isDashboardActive
-                    ? "bg-[var(--tb-primary)] text-[var(--tb-on-accent)] shadow-[var(--tb-shadow-xs)]"
-                    : "bg-[var(--tb-surface)] text-[var(--tb-ink)] hover:bg-[var(--tb-bg)]",
+                    ? "border-[var(--tb-ink)] bg-[var(--tb-primary)] text-[var(--tb-on-accent)] shadow-[var(--tb-shadow-xs)]"
+                    : "border-transparent text-[var(--tb-ink)] hover:border-[var(--tb-ink)] hover:bg-[var(--tb-bg)]",
                 ].join(" ")}
               >
                 <DashboardIcon className="h-4 w-4 shrink-0" />
@@ -237,14 +271,15 @@ export function AppSidebar({
             <li>
               <Link
                 href="/projects"
-                onClick={onCloseMobile}
-                title="Projects"
+                onClick={(event) => handleNavClick(event, isMobileDrawer)}
+                title={`Projects (${projects.length})`}
+                aria-label={`Projects (${projects.length})`}
                 className={[
-                  "tb-tactile-motion flex min-h-[44px] items-center justify-between gap-2 rounded-[3px] border-2 border-[var(--tb-ink)] px-3 text-[13px] font-bold transition-colors",
+                  "tb-tactile-motion flex min-h-[42px] items-center justify-between gap-2 rounded-[3px] border-2 px-2.5 text-[13px] font-bold transition-colors focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]",
                   isCompact ? "justify-center px-0" : "",
                   isProjectsIndexActive
-                    ? "bg-[var(--tb-primary)] text-[var(--tb-on-accent)] shadow-[var(--tb-shadow-xs)]"
-                    : "bg-[var(--tb-surface)] text-[var(--tb-ink)] hover:bg-[var(--tb-bg)]",
+                    ? "border-[var(--tb-ink)] bg-[var(--tb-primary)] text-[var(--tb-on-accent)] shadow-[var(--tb-shadow-xs)]"
+                    : "border-transparent text-[var(--tb-ink)] hover:border-[var(--tb-ink)] hover:bg-[var(--tb-bg)]",
                 ].join(" ")}
               >
                 <span className="inline-flex items-center gap-3">
@@ -261,15 +296,42 @@ export function AppSidebar({
 
             <li>
               <Link
-                href="/settings"
-                onClick={onCloseMobile}
-                title="Settings"
+                href="/my-tasks"
+                onClick={(event) => handleNavClick(event, isMobileDrawer)}
+                title={`My Tasks (${myCreatedTasksCount})`}
+                aria-label={`My Tasks (${myCreatedTasksCount})`}
                 className={[
-                  "tb-tactile-motion flex min-h-[44px] items-center gap-3 rounded-[3px] border-2 border-[var(--tb-ink)] px-3 text-[13px] font-bold transition-colors",
+                  "tb-tactile-motion flex min-h-[42px] items-center justify-between gap-2 rounded-[3px] border-2 px-2.5 text-[13px] font-bold transition-colors focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]",
+                  isCompact ? "justify-center px-0" : "",
+                  isMyTasksActive
+                    ? "border-[var(--tb-ink)] bg-[var(--tb-primary)] text-[var(--tb-on-accent)] shadow-[var(--tb-shadow-xs)]"
+                    : "border-transparent text-[var(--tb-ink)] hover:border-[var(--tb-ink)] hover:bg-[var(--tb-bg)]",
+                ].join(" ")}
+              >
+                <span className="inline-flex items-center gap-3">
+                  <MyTasksIcon className="h-4 w-4 shrink-0" />
+                  {!isCompact ? <span>My Tasks</span> : null}
+                </span>
+                {!isCompact ? (
+                  <span className="rounded-[2px] border border-[var(--tb-ink)] bg-[var(--tb-surface)] px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-[var(--tb-ink)]">
+                    {myCreatedTasksCount}
+                  </span>
+                ) : null}
+              </Link>
+            </li>
+
+            <li>
+              <Link
+                href="/settings"
+                onClick={(event) => handleNavClick(event, isMobileDrawer)}
+                title="Settings"
+                aria-label="Settings"
+                className={[
+                  "tb-tactile-motion flex min-h-[42px] items-center gap-3 rounded-[3px] border-2 px-2.5 text-[13px] font-bold transition-colors focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]",
                   isCompact ? "justify-center px-0" : "",
                   isSettingsActive
-                    ? "bg-[var(--tb-primary)] text-[var(--tb-on-accent)] shadow-[var(--tb-shadow-xs)]"
-                    : "bg-[var(--tb-surface)] text-[var(--tb-ink)] hover:bg-[var(--tb-bg)]",
+                    ? "border-[var(--tb-ink)] bg-[var(--tb-primary)] text-[var(--tb-on-accent)] shadow-[var(--tb-shadow-xs)]"
+                    : "border-transparent text-[var(--tb-ink)] hover:border-[var(--tb-ink)] hover:bg-[var(--tb-bg)]",
                 ].join(" ")}
               >
                 <SettingsIcon className="h-4 w-4 shrink-0" />
@@ -281,14 +343,15 @@ export function AppSidebar({
               <li>
                 <Link
                   href="/admin"
-                  onClick={onCloseMobile}
+                  onClick={(event) => handleNavClick(event, isMobileDrawer)}
                   title="Admin Console"
+                  aria-label="Admin Console"
                   className={[
-                    "tb-tactile-motion flex min-h-[44px] items-center gap-3 rounded-[3px] border-2 border-[var(--tb-ink)] px-3 text-[13px] font-bold transition-colors",
+                    "tb-tactile-motion flex min-h-[42px] items-center gap-3 rounded-[3px] border-2 px-2.5 text-[13px] font-bold transition-colors focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]",
                     isCompact ? "justify-center px-0" : "",
                     isAdminActive
-                      ? "bg-[var(--tb-secondary)] text-[var(--tb-on-accent)] shadow-[var(--tb-shadow-xs)]"
-                      : "bg-[var(--tb-surface)] text-[var(--tb-ink)] hover:bg-[var(--tb-bg)]",
+                      ? "border-[var(--tb-ink)] bg-[var(--tb-secondary)] text-[var(--tb-on-accent)] shadow-[var(--tb-shadow-xs)]"
+                      : "border-transparent text-[var(--tb-ink)] hover:border-[var(--tb-ink)] hover:bg-[var(--tb-bg)]",
                   ].join(" ")}
                 >
                   <UsersIcon className="h-4 w-4 shrink-0" />
@@ -300,23 +363,24 @@ export function AppSidebar({
 
           {/* Quick Project Switcher */}
           {projects.length > 0 ? (
-            <div className="mt-6 border-t-2 border-[var(--tb-ink)] pt-4">
+            <div className="mt-5 border-t-2 border-[var(--tb-ink)]/25 pt-4">
               {!isCompact ? (
-                <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--tb-ink-muted)]">
-                  Project Kamu
+                <p className="mb-2 px-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--tb-ink-muted)]">
+                  Projects
                 </p>
               ) : null}
-              <ul className="space-y-1.5">
+              <ul className="space-y-1">
                 {projects.map((project) => {
                   const isCurrentProject = pathname === `/projects/${project.id}`;
                   return (
                     <li key={project.id}>
                       <Link
                         href={`/projects/${project.id}`}
-                        onClick={onCloseMobile}
+                        onClick={(event) => handleNavClick(event, isMobileDrawer)}
                         title={`${project.code} — ${project.name}`}
+                        aria-label={`${project.code} — ${project.name}`}
                         className={[
-                          "flex min-h-[38px] items-center gap-2.5 rounded-[3px] border-2 px-2 py-1.5 text-[12px] font-bold transition-colors",
+                          "flex min-h-[38px] items-center gap-2.5 rounded-[3px] border-2 px-2 py-1 text-[12px] font-bold transition-colors focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]",
                           isCompact ? "justify-center px-0" : "",
                           isCurrentProject
                             ? "border-[var(--tb-ink)] bg-[var(--tb-bg)] text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)]"
@@ -344,18 +408,24 @@ export function AppSidebar({
         </nav>
 
         {/* Sidebar Footer: Dark Mode + Profile + Sign Out */}
-        <div className="space-y-2.5 border-t-[3px] border-[var(--tb-ink)] bg-[var(--tb-bg)] p-3">
+        <div
+          className={[
+            "space-y-2 border-t-[3px] border-[var(--tb-ink)] bg-[var(--tb-bg)]",
+            isCompact ? "p-2" : "p-3",
+          ].join(" ")}
+        >
           <div className={isCompact ? "flex justify-center" : ""}>
             <ThemeToggle fullWidth={!isCompact} compact={isCompact} />
           </div>
 
           <Link
             href="/settings"
-            onClick={onCloseMobile}
+            onClick={(event) => handleNavClick(event, isMobileDrawer)}
             title={`${currentUser.name} (${currentUser.email})`}
+            aria-label={`Profile settings for ${currentUser.name}`}
             className={[
-              "flex items-center gap-2.5 rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-surface)] p-2 hover:bg-[var(--tb-primary)]/20",
-              isCompact ? "justify-center p-1.5" : "",
+              "flex items-center gap-2.5 rounded-[3px] border-2 border-transparent p-1.5 transition-colors hover:border-[var(--tb-ink)] hover:bg-[var(--tb-surface)] focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]",
+              isCompact ? "justify-center" : "border-[var(--tb-ink)] bg-[var(--tb-surface)] p-2",
             ].join(" ")}
           >
             <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[2px] border-2 border-[var(--tb-ink)] bg-[var(--tb-primary)] text-[11px] font-bold text-[var(--tb-on-accent)]">
@@ -378,8 +448,9 @@ export function AppSidebar({
             onClick={handleSignOut}
             disabled={isSigningOut}
             title="Sign out"
+            aria-label="Sign out"
             className={[
-              "tb-tactile-motion flex min-h-[42px] w-full cursor-pointer items-center justify-center gap-2 rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-surface)] px-3 text-[12px] font-bold uppercase tracking-[0.05em] text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)] hover:bg-[var(--tb-secondary)] hover:text-[var(--tb-on-accent)] disabled:cursor-not-allowed disabled:opacity-60",
+              "tb-tactile-motion flex min-h-[40px] w-full cursor-pointer items-center justify-center gap-2 rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-surface)] px-3 text-[12px] font-bold uppercase tracking-[0.05em] text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)] hover:bg-[var(--tb-secondary)] hover:text-[var(--tb-on-accent)] focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)] disabled:cursor-not-allowed disabled:opacity-60",
               isCompact ? "px-0" : "",
             ].join(" ")}
           >
@@ -395,14 +466,22 @@ export function AppSidebar({
 
   return (
     <>
-      {/* Desktop Sticky Sidebar */}
+      {/* Desktop Sticky Sidebar — Minimized by default; clicking sidebar expands to normal size */}
       <aside
+        aria-label="Primary sidebar"
+        onClick={() => {
+          if (collapsed) {
+            onExpand();
+          }
+        }}
         className={[
-          "sticky top-0 hidden h-dvh shrink-0 border-r-[3px] border-[var(--tb-ink)] transition-[width] duration-150 lg:block",
-          collapsed ? "w-[78px]" : "w-[264px]",
+          "sticky top-0 z-30 hidden h-dvh shrink-0 border-r-[3px] border-[var(--tb-ink)] transition-[width] duration-150 ease-out lg:block",
+          collapsed
+            ? "w-[72px] cursor-pointer"
+            : "w-[252px] shadow-[var(--tb-shadow-md)]",
         ].join(" ")}
       >
-        {renderNavContent(collapsed)}
+        {renderNavContent(collapsed, false)}
       </aside>
 
       {/* Mobile Drawer Overlay */}
@@ -413,8 +492,8 @@ export function AppSidebar({
             aria-hidden="true"
             className="fixed inset-0 bg-[var(--tb-overlay)]"
           />
-          <aside className="relative z-10 h-dvh w-[280px] max-w-[85vw] border-r-[3px] border-[var(--tb-ink)] shadow-[var(--tb-shadow-lg)]">
-            {renderNavContent(false)}
+          <aside className="relative z-10 h-dvh w-[272px] max-w-[85vw] border-r-[3px] border-[var(--tb-ink)] shadow-[var(--tb-shadow-lg)]">
+            {renderNavContent(false, true)}
           </aside>
         </div>
       ) : null}

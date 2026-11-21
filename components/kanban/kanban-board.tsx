@@ -238,7 +238,7 @@ export function KanbanBoard({
     <div className="flex flex-1 flex-col">
       {/* Project Header + 2-Tab Switcher (Kanban | Calendar) */}
       <header className="sticky top-[63px] z-20 border-b-[3px] border-[var(--tb-ink)] bg-[var(--tb-surface)] lg:top-0">
-        <div className="mx-auto flex max-w-[1680px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-[1680px] flex-wrap items-center justify-between gap-3 px-4 py-2.5 sm:px-6 lg:flex-nowrap">
           <div className="flex min-w-0 items-center gap-2.5">
             <Link
               href="/projects"
@@ -256,17 +256,17 @@ export function KanbanBoard({
               {project.code}
             </span>
 
-            <h1 className="truncate text-[18px] font-bold text-[var(--tb-ink)] sm:text-[21px]">
+            <h1 className="truncate text-[17px] font-bold text-[var(--tb-ink)] sm:text-[20px]">
               {project.name}
             </h1>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:gap-2.5">
             {/* 2-Tab Switcher: Kanban & Calendar */}
             <div
               role="tablist"
-              aria-label="Tampilan project"
-              className="inline-flex rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-bg)] p-0.5 shadow-[var(--tb-shadow-xs)]"
+              aria-label="Project view"
+              className="inline-flex shrink-0 rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-bg)] p-0.5 shadow-[var(--tb-shadow-xs)]"
             >
               <button
                 type="button"
@@ -274,7 +274,7 @@ export function KanbanBoard({
                 aria-selected={activeView === "kanban"}
                 onClick={() => switchView("kanban")}
                 className={[
-                  "inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-[2px] px-3 text-[12px] font-bold uppercase tracking-[0.05em] transition-colors",
+                  "inline-flex min-h-[34px] cursor-pointer items-center gap-1.5 rounded-[2px] px-3 text-[12px] font-bold uppercase tracking-[0.05em] transition-colors",
                   activeView === "kanban"
                     ? "border border-[var(--tb-ink)] bg-[var(--tb-primary)] text-[var(--tb-on-accent)]"
                     : "text-[var(--tb-ink)] hover:bg-[var(--tb-surface)]",
@@ -290,7 +290,7 @@ export function KanbanBoard({
                 aria-selected={activeView === "calendar"}
                 onClick={() => switchView("calendar")}
                 className={[
-                  "inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-[2px] px-3 text-[12px] font-bold uppercase tracking-[0.05em] transition-colors",
+                  "inline-flex min-h-[34px] cursor-pointer items-center gap-1.5 rounded-[2px] px-3 text-[12px] font-bold uppercase tracking-[0.05em] transition-colors",
                   activeView === "calendar"
                     ? "border border-[var(--tb-ink)] bg-[var(--tb-amber)] text-[var(--tb-on-accent)]"
                     : "text-[var(--tb-ink)] hover:bg-[var(--tb-surface)]",
@@ -305,7 +305,7 @@ export function KanbanBoard({
               type="button"
               variant="primary"
               onClick={() => openCreateModal("BACKLOG")}
-              className="w-auto min-h-[42px] px-3.5 text-[13px]"
+              className="w-auto shrink-0 whitespace-nowrap !min-h-[40px] sm:!min-h-[40px] !px-3.5 !py-1.5 text-[12px]"
             >
               <PlusIcon className="h-4 w-4 shrink-0" />
               <span>CREATE TASK</span>
@@ -316,12 +316,12 @@ export function KanbanBoard({
 
       {/* Subheader bar: Description + Team Avatars */}
       <div className="border-b-2 border-[var(--tb-ink)] bg-[var(--tb-surface)]/90">
-        <div className="mx-auto flex max-w-[1680px] flex-wrap items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
+        <div className="mx-auto flex max-w-[1680px] flex-wrap items-center justify-between gap-3 px-4 py-2 sm:px-6">
           <p className="text-[13px] font-medium text-[var(--tb-ink-muted)]">
             {project.description ||
               (activeView === "kanban"
-                ? "Drag & drop kartu antar kolom atau klik kartu untuk edit progress, Catatan QC, & Activity Log."
-                : "Lihat jadwal task per bulan, klik tanggal untuk membuat task baru, atau klik task untuk detail.")}
+                ? "Drag cards across columns or click any card to edit progress, QC notes, and Activity Log."
+                : "View scheduled tasks by month, click any day to create a task, or click a task for details.")}
           </p>
 
           <div className="flex items-center gap-2">
@@ -341,7 +341,7 @@ export function KanbanBoard({
                 </span>
               ))}
             </div>
-            <span className="text-[12px] font-bold text-[var(--tb-ink)]">
+            <span className="text-[12px] font-bold tabular-nums text-[var(--tb-ink)]">
               {tasks.length} {tasks.length === 1 ? "task" : "tasks"}
             </span>
           </div>
@@ -356,8 +356,8 @@ export function KanbanBoard({
           onCreateTaskForDate={(dateIso) => openCreateModal("TODO", dateIso)}
         />
       ) : (
-        <main className="flex-1 overflow-x-auto px-4 py-5 sm:px-6">
-          <div className="mx-auto grid min-w-[1440px] max-w-[1680px] grid-cols-6 items-start gap-4">
+        <main className="flex-1 overflow-x-auto px-4 py-4 sm:px-6">
+          <div className="mx-auto grid min-w-[1240px] max-w-[1680px] grid-cols-6 items-start gap-3.5">
             {KANBAN_COLUMNS.map((column) => {
               const columnTasks = tasks.filter((t) => t.status === column.id);
               const isOver = dragOverColumn === column.id;

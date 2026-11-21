@@ -1,15 +1,38 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 
 type Theme = "light" | "dark";
 
 const STORAGE_KEY = "tb-theme";
 const THEME_EVENT = "tb-theme-change";
 
+function resolvePreferredTheme(): Theme {
+  if (typeof window === "undefined") return "light";
+  try {
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+    if (stored === "dark" || stored === "light") return stored;
+  } catch {
+    // Ignore storage errors
+  }
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+}
+
+function syncDocumentTheme(next: Theme) {
+  if (typeof document === "undefined") return;
+  const root = document.documentElement;
+  root.dataset.theme = next;
+  root.classList.toggle("dark", next === "dark");
+  root.style.colorScheme = next;
+}
+
 function getClientTheme(): Theme {
   if (typeof document === "undefined") return "light";
-  return document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+  const attr = document.documentElement.dataset.theme;
+  if (attr === "dark" || attr === "light") return attr;
+  return resolvePreferredTheme();
 }
 
 function getServerTheme(): Theme {
@@ -22,7 +45,7 @@ function subscribeTheme(onStoreChange: () => void): () => void {
   const handleStorage = (event: StorageEvent) => {
     if (event.key !== STORAGE_KEY) return;
     if (event.newValue === "dark" || event.newValue === "light") {
-      document.documentElement.dataset.theme = event.newValue;
+      syncDocumentTheme(event.newValue);
       onStoreChange();
     }
   };
@@ -35,7 +58,7 @@ function subscribeTheme(onStoreChange: () => void): () => void {
     } catch {
       // Ignore storage access errors
     }
-    document.documentElement.dataset.theme = event.matches ? "dark" : "light";
+    syncDocumentTheme(event.matches ? "dark" : "light");
     onStoreChange();
   };
 
@@ -51,7 +74,7 @@ function subscribeTheme(onStoreChange: () => void): () => void {
 }
 
 function applyTheme(next: Theme) {
-  document.documentElement.dataset.theme = next;
+  syncDocumentTheme(next);
   try {
     window.localStorage.setItem(STORAGE_KEY, next);
   } catch {
@@ -113,17 +136,27 @@ export function ThemeToggle({
   );
   const isDark = theme === "dark";
 
+  // Keep DOM attributes synchronized after hydration & route transitions
+  useEffect(() => {
+    const preferred = resolvePreferredTheme();
+    syncDocumentTheme(preferred);
+    window.dispatchEvent(new Event(THEME_EVENT));
+  }, []);
+
   return (
     <button
       type="button"
-      onClick={() => applyTheme(isDark ? "light" : "dark")}
-      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      onClick={(event) => {
+        event.stopPropagation();
+        applyTheme(isDark ? "light" : "dark");
+      }}
+      aria-label={isDark ? "Disable dark mode (switch to light)" : "Enable dark mode"}
       aria-pressed={isDark}
-      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      title={isDark ? "Dark mode: ON — click for Light mode" : "Dark mode: OFF — click for Dark mode"}
       className={[
-        "tb-tactile-motion inline-flex min-h-[42px] min-w-[42px] shrink-0 cursor-pointer items-center gap-2.5 rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-surface)] px-2.5 text-[12px] font-bold tracking-[0.06em] text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)] transition-[transform,box-shadow,background-color] duration-150 ease-out hover:-translate-x-0.5 hover:-translate-y-0.5 hover:bg-[var(--tb-bg)] hover:shadow-[var(--tb-shadow-sm)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[var(--tb-shadow-pressed)] focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)] sm:min-h-[44px]",
+        "tb-tactile-motion inline-flex min-h-[42px] min-w-[42px] shrink-0 cursor-pointer items-center gap-2.5 rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-surface)] px-2.5 text-[12px] font-bold tracking-[0.06em] text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)] transition-[transform,box-shadow,background-color] duration-150 ease-out hover:-translate-x-0.5 hover:-translate-y-0.5 hover:bg-[var(--tb-bg)] hover:shadow-[var(--tb-shadow-sm)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[var(--tb-shadow-pressed)] focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]",
         fullWidth && !compact ? "w-full justify-between px-3" : "justify-center",
-        !fullWidth && !compact ? "sm:px-3" : "",
+        !fullWidth && !compact ? "sm:min-h-[44px] sm:px-3" : "",
         className,
       ].join(" ")}
     >
@@ -135,7 +168,7 @@ export function ThemeToggle({
         )}
         {!compact ? (
           <span className={fullWidth ? "uppercase" : "hidden uppercase sm:inline"}>
-            {isDark ? "Light Mode" : "Dark Mode"}
+            {fullWidth ? "Dark Mode" : isDark ? "Light Mode" : "Dark Mode"}
           </span>
         ) : null}
       </span>

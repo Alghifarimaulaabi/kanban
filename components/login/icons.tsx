@@ -3,6 +3,8 @@ import type { SVGProps } from "react";
 export function TechBroMark(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
+      width="36"
+      height="36"
       viewBox="0 0 36 36"
       fill="none"
       aria-hidden="true"
@@ -13,19 +15,19 @@ export function TechBroMark(props: SVGProps<SVGSVGElement>) {
         y="2"
         width="32"
         height="32"
-        fill="var(--tb-primary)"
-        stroke="var(--tb-ink)"
+        fill="var(--tb-primary, #b8f56a)"
+        stroke="var(--tb-ink, #171717)"
         strokeWidth="3"
       />
       <path
         d="M8 11H22M15 11V26"
-        stroke="var(--tb-on-accent)"
+        stroke="var(--tb-on-accent, #171717)"
         strokeWidth="3.2"
         strokeLinecap="square"
       />
       <path
         d="M21 15H26.5C28.2 15 29.2 16 29.2 17.5C29.2 18.8 28.4 19.6 27.3 19.9C28.7 20.2 29.6 21.2 29.6 22.7C29.6 24.6 28.3 25.8 26.2 25.8H21V15Z"
-        stroke="var(--tb-on-accent)"
+        stroke="var(--tb-on-accent, #171717)"
         strokeWidth="2.8"
         strokeLinejoin="miter"
       />

@@ -18,24 +18,42 @@ async function AuthenticatedWorkspaceLayout({
   const session = await requireUserSession();
   const isAdmin = session.user.role === "admin";
 
-  const dbProjects = await prisma.project.findMany({
-    where: isAdmin
-      ? undefined
-      : {
-          members: {
-            some: {
-              userId: session.user.id,
+  const [dbProjects, myCreatedTasksCount] = await Promise.all([
+    prisma.project.findMany({
+      where: isAdmin
+        ? undefined
+        : {
+            members: {
+              some: {
+                userId: session.user.id,
+              },
             },
           },
-        },
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      code: true,
-      name: true,
-      accent: true,
-    },
-  });
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        code: true,
+        name: true,
+        accent: true,
+      },
+    }),
+    prisma.task.count({
+      where: {
+        OR: [
+          { createdById: session.user.id },
+          {
+            createdById: null,
+            activities: {
+              some: {
+                action: "TASK_CREATED",
+                actorId: session.user.id,
+              },
+            },
+          },
+        ],
+      },
+    }),
+  ]);
 
   const projects: SidebarProject[] = dbProjects.map((project) => ({
     id: project.id,
@@ -53,6 +71,7 @@ async function AuthenticatedWorkspaceLayout({
         role: isAdmin ? "admin" : "member",
       }}
       projects={projects}
+      myCreatedTasksCount={myCreatedTasksCount}
     >
       {children}
     </WorkspaceShell>

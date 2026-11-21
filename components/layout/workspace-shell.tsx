@@ -12,6 +12,7 @@ import {
 interface WorkspaceShellProps {
   currentUser: SidebarUser;
   projects: SidebarProject[];
+  myCreatedTasksCount: number;
   children: ReactNode;
 }
 
@@ -34,9 +35,11 @@ function MenuIcon({ className }: { className?: string }) {
 export function WorkspaceShell({
   currentUser,
   projects,
+  myCreatedTasksCount,
   children,
 }: WorkspaceShellProps) {
-  const [collapsed, setCollapsed] = useState(false);
+  // Minimized by default — expands to normal width only when clicking the sidebar
+  const [collapsed, setCollapsed] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -44,18 +47,31 @@ export function WorkspaceShell({
       <AppSidebar
         currentUser={currentUser}
         projects={projects}
+        myCreatedTasksCount={myCreatedTasksCount}
         collapsed={collapsed}
+        onExpand={() => setCollapsed(false)}
+        onCollapse={() => setCollapsed(true)}
         onToggleCollapse={() => setCollapsed((prev) => !prev)}
         mobileOpen={mobileOpen}
         onCloseMobile={() => setMobileOpen(false)}
       />
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div
+        className="flex min-w-0 flex-1 flex-col"
+        onClick={() => {
+          if (!collapsed) {
+            setCollapsed(true);
+          }
+        }}
+      >
         {/* Mobile Top Bar */}
         <div className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b-[3px] border-[var(--tb-ink)] bg-[var(--tb-surface)] px-4 py-2.5 lg:hidden">
           <button
             type="button"
-            onClick={() => setMobileOpen(true)}
+            onClick={(event) => {
+              event.stopPropagation();
+              setMobileOpen(true);
+            }}
             aria-label="Open navigation menu"
             className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-bg)] text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)] hover:bg-[var(--tb-primary)] hover:text-[var(--tb-on-accent)]"
           >
@@ -64,9 +80,12 @@ export function WorkspaceShell({
 
           <Link
             href="/dashboard"
+            aria-label="TECH BRO — Dashboard"
             className="flex items-center gap-2 text-[16px] font-bold tracking-[0.06em] text-[var(--tb-ink)]"
           >
-            <TechBroMark className="h-7 w-7" />
+            <span className="inline-flex shrink-0 shadow-[var(--tb-shadow-xs)]">
+              <TechBroMark className="h-7 w-7" />
+            </span>
             <span>TECH BRO</span>
           </Link>
 

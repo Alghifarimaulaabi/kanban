@@ -569,34 +569,41 @@ export function AdminDashboard({
                           </div>
 
                           <dl className="mt-2.5 grid grid-cols-3 gap-2 text-center">
-                            <div className="rounded-[2px] border-2 border-[var(--tb-ink)] bg-[var(--tb-bg)] px-2 py-1.5">
-                              <dt className="text-[11px] font-bold text-[var(--tb-ink-muted)]">
-                                Backlog / To Do
+                            <div className="flex flex-col justify-between rounded-[2px] border-2 border-[var(--tb-ink)] bg-[var(--tb-bg)] px-2 py-2">
+                              <dt className="whitespace-nowrap text-[11px] font-bold text-[var(--tb-ink-muted)]">
+                                Queued
                               </dt>
-                              <dd className="text-[15px] font-bold tabular-nums text-[var(--tb-ink)]">
+                              <dd className="mt-1 text-[15px] font-bold leading-none tabular-nums text-[var(--tb-ink)]">
                                 {project.stages.backlog + project.stages.todo}
                               </dd>
                             </div>
                             <div
                               className={[
-                                "rounded-[2px] border-2 border-[var(--tb-ink)] px-2 py-1.5",
+                                "flex flex-col justify-between rounded-[2px] border-2 border-[var(--tb-ink)] px-2 py-2",
                                 project.stages.revision > 0
                                   ? "bg-[var(--tb-secondary)] text-[var(--tb-on-accent)]"
                                   : "bg-[var(--tb-bg)] text-[var(--tb-ink)]",
                               ].join(" ")}
                             >
-                              <dt className="text-[11px] font-bold">
+                              <dt
+                                className={[
+                                  "whitespace-nowrap text-[11px] font-bold",
+                                  project.stages.revision > 0
+                                    ? ""
+                                    : "text-[var(--tb-ink-muted)]",
+                                ].join(" ")}
+                              >
                                 Revision
                               </dt>
-                              <dd className="text-[15px] font-bold tabular-nums">
+                              <dd className="mt-1 text-[15px] font-bold leading-none tabular-nums">
                                 {project.stages.revision}
                               </dd>
                             </div>
-                            <div className="rounded-[2px] border-2 border-[var(--tb-ink)] bg-[var(--tb-bg)] px-2 py-1.5">
-                              <dt className="text-[11px] font-bold text-[var(--tb-ink-muted)]">
-                                Active / Review
+                            <div className="flex flex-col justify-between rounded-[2px] border-2 border-[var(--tb-ink)] bg-[var(--tb-bg)] px-2 py-2">
+                              <dt className="whitespace-nowrap text-[11px] font-bold text-[var(--tb-ink-muted)]">
+                                Active
                               </dt>
-                              <dd className="text-[15px] font-bold tabular-nums text-[var(--tb-ink)]">
+                              <dd className="mt-1 text-[15px] font-bold leading-none tabular-nums text-[var(--tb-ink)]">
                                 {project.stages.inProgress + project.stages.inReview}
                               </dd>
                             </div>

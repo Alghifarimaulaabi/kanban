@@ -113,6 +113,7 @@ export async function POST(
   const task = await prisma.task.create({
     data: {
       projectId,
+      createdById: session.user.id,
       title,
       description: body?.description?.trim() || null,
       status,

@@ -33,6 +33,9 @@ export function BrutalButton({
   ...props
 }: BrutalButtonProps) {
   const isDisabled = disabled || isLoading;
+  const hasUnprefixedWidth = /(?:^|\s)!?w-(?:auto|fit|min|max|\d+|\[)/.test(
+    className,
+  );
 
   return (
     <button
@@ -40,7 +43,8 @@ export function BrutalButton({
       disabled={isDisabled}
       aria-busy={isLoading || undefined}
       className={[
-        "tb-tactile-motion relative inline-flex min-h-[48px] w-full items-center justify-center gap-2.5 sm:min-h-[50px]",
+        "tb-tactile-motion relative inline-flex min-h-[48px] items-center justify-center gap-2.5 sm:min-h-[50px]",
+        hasUnprefixedWidth ? "" : "w-full",
         "rounded-[3px] border-2 border-[var(--tb-ink)] px-5 py-2.5 sm:py-3",
         "text-[15px] font-bold tracking-[0.04em]",
         "transition-[transform,box-shadow,background-color] duration-150 ease-out",

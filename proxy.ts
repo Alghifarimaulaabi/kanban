@@ -9,6 +9,7 @@ export async function proxy(request: NextRequest) {
   const isProtectedAppRoute =
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/projects") ||
+    pathname.startsWith("/my-tasks") ||
     pathname.startsWith("/settings");
 
   if (isAdminRoute || isProtectedAppRoute) {
@@ -41,6 +42,8 @@ export const config = {
     "/dashboard/:path*",
     "/projects",
     "/projects/:path*",
+    "/my-tasks",
+    "/my-tasks/:path*",
     "/settings",
     "/settings/:path*",
   ],

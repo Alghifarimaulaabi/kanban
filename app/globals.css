@@ -1,6 +1,8 @@
 @import "tailwindcss";
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *, .dark, .dark *));
 
 :root {
+  color-scheme: light;
   --background: #f5f0e8;
   --foreground: #171717;
 
@@ -32,7 +34,9 @@
   --tb-shadow-error: 3px 3px 0px var(--tb-error);
 }
 
-html[data-theme="dark"] {
+html[data-theme="dark"],
+html.dark {
+  color-scheme: dark;
   --background: #141311;
   --foreground: #f3eee4;
 
@@ -72,9 +76,10 @@ html[data-theme="dark"] {
   --font-brutal: var(--font-space-grotesk);
 }
 
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background-color: var(--tb-bg);
+  color: var(--tb-ink);
   font-family: var(--font-space-grotesk), system-ui, -apple-system, sans-serif;
 }
 
@@ -84,11 +89,6 @@ body {
   color: var(--tb-ink);
   font-family: var(--font-space-grotesk), system-ui, -apple-system, sans-serif;
   caret-color: var(--tb-ink);
-  color-scheme: light;
-}
-
-html[data-theme="dark"] .tb-brutal-surface {
-  color-scheme: dark;
 }
 
 .tb-brutal-surface ::selection {

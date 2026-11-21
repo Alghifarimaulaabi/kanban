@@ -39,33 +39,33 @@ export function ProjectsDirectory({
     <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-6 sm:px-8 sm:py-8">
       <div className="flex flex-col gap-4 border-b-[3px] border-[var(--tb-ink)] pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-[32px] font-bold leading-[1.05] tracking-[-0.03em] text-[var(--tb-ink)] sm:text-[40px]">
+          <h1 className="text-[30px] font-bold leading-[1.08] tracking-[-0.03em] text-[var(--tb-ink)] sm:text-[38px]">
             Projects
           </h1>
-          <p className="mt-2 max-w-[58ch] text-[15px] font-medium leading-[1.5] text-[var(--tb-ink-muted)]">
-            Pilih project di bawah untuk membuka Kanban board atau tampilan Calendar tim.
+          <p className="mt-1.5 max-w-[58ch] text-[15px] font-medium leading-[1.5] text-[var(--tb-ink-muted)]">
+            Select a project to open its 6-column Kanban board or team Calendar.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <div className="relative w-full sm:w-[280px]">
+          <div className="relative w-full sm:w-[270px]">
             <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--tb-ink-muted)]" />
             <input
               type="search"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Cari kode atau nama project..."
+              placeholder="Filter by code or project name..."
               aria-label="Search projects"
-              className="min-h-[44px] w-full rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-surface)] py-2 pl-9 pr-3 text-[13px] font-semibold text-[var(--tb-ink)] placeholder:text-[var(--tb-placeholder)] shadow-[var(--tb-shadow-xs)] focus:bg-[var(--tb-surface-focus)] focus:outline-none"
+              className="min-h-[44px] w-full rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-surface)] py-2 pl-9 pr-3 text-[13px] font-semibold text-[var(--tb-ink)] placeholder:text-[var(--tb-placeholder)] shadow-[var(--tb-shadow-xs)] focus:bg-[var(--tb-surface-focus)] focus:outline-none focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]"
             />
           </div>
 
           {isAdmin ? (
             <Link
               href="/admin"
-              className="tb-tactile-motion inline-flex min-h-[44px] items-center rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-primary)] px-4 text-[13px] font-bold uppercase tracking-[0.04em] text-[var(--tb-on-accent)] shadow-[var(--tb-shadow-xs)] hover:bg-[var(--tb-primary-hover)]"
+              className="tb-tactile-motion inline-flex min-h-[44px] items-center rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-primary)] px-4 text-[13px] font-bold uppercase tracking-[0.04em] text-[var(--tb-on-accent)] shadow-[var(--tb-shadow-xs)] hover:bg-[var(--tb-primary-hover)] focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-[var(--tb-ink)]"
             >
-              Kelola di Admin
+              Manage in Admin
             </Link>
           ) : null}
         </div>
@@ -73,17 +73,17 @@ export function ProjectsDirectory({
 
       {projects.length === 0 ? (
         <div className="mt-8 rounded-[4px] border-[3px] border-[var(--tb-ink)] bg-[var(--tb-surface)] p-10 text-center shadow-[var(--tb-shadow-md)]">
-          <h2 className="text-[22px] font-bold text-[var(--tb-ink)]">
-            Belum ada project yang tersedia
+          <h2 className="text-[20px] font-bold text-[var(--tb-ink)]">
+            No projects assigned yet
           </h2>
-          <p className="mx-auto mt-2 max-w-[46ch] text-[14px] font-medium text-[var(--tb-ink-muted)]">
-            Kamu belum di-assign ke project mana pun. Hubungi admin workspace agar akunmu ditambahkan ke project.
+          <p className="mx-auto mt-1.5 max-w-[46ch] text-[14px] font-medium text-[var(--tb-ink-muted)]">
+            Contact your workspace administrator to be assigned to a project board.
           </p>
         </div>
       ) : filteredProjects.length === 0 ? (
-        <div className="mt-8 rounded-[4px] border-[3px] border-[var(--tb-ink)] bg-[var(--tb-surface)] p-8 text-center shadow-[var(--tb-shadow-sm)]">
+        <div className="mt-8 rounded-[4px] border-2 border-[var(--tb-ink)] bg-[var(--tb-surface)] p-8 text-center shadow-[var(--tb-shadow-xs)]">
           <p className="text-[15px] font-bold text-[var(--tb-ink)]">
-            Tidak ada project yang cocok dengan &ldquo;{searchQuery}&rdquo;
+            No projects matched &ldquo;{searchQuery}&rdquo;
           </p>
         </div>
       ) : (
@@ -98,9 +98,9 @@ export function ProjectsDirectory({
               project.stages.done;
 
             return (
-              <div
+              <article
                 key={project.id}
-                className="flex flex-col justify-between rounded-[4px] border-[3px] border-[var(--tb-ink)] bg-[var(--tb-surface)] p-5 shadow-[var(--tb-shadow-md)]"
+                className="flex flex-col justify-between rounded-[4px] border-[3px] border-[var(--tb-ink)] bg-[var(--tb-surface)] p-5 shadow-[var(--tb-shadow-sm)]"
               >
                 <div>
                   <div className="flex items-center justify-between gap-2">
@@ -119,43 +119,52 @@ export function ProjectsDirectory({
 
                   <Link
                     href={`/projects/${project.id}`}
-                    className="mt-3.5 block text-[22px] font-bold leading-snug tracking-[-0.02em] text-[var(--tb-ink)] decoration-2 underline-offset-4 hover:underline"
+                    className="mt-3.5 block text-[21px] font-bold leading-snug tracking-[-0.02em] text-[var(--tb-ink)] decoration-2 underline-offset-4 hover:underline"
                   >
                     {project.name}
                   </Link>
                   {project.description ? (
-                    <p className="mt-1.5 line-clamp-2 text-[14px] font-medium leading-[1.5] text-[var(--tb-ink-muted)]">
+                    <p className="mt-1.5 line-clamp-2 text-[13px] font-medium leading-[1.5] text-[var(--tb-ink-muted)]">
                       {project.description}
                     </p>
                   ) : null}
 
                   <dl className="mt-4 grid grid-cols-3 gap-2 border-t-2 border-[var(--tb-ink)] pt-3.5 text-center">
-                    <div className="rounded-[2px] border-2 border-[var(--tb-ink)] bg-[var(--tb-bg)] px-2 py-1.5">
-                      <dt className="text-[11px] font-bold text-[var(--tb-ink-muted)]">
-                        Backlog / To Do
+                    <div className="flex flex-col justify-between rounded-[2px] border-2 border-[var(--tb-ink)] bg-[var(--tb-bg)] px-2 py-2">
+                      <dt className="whitespace-nowrap text-[11px] font-bold text-[var(--tb-ink-muted)]">
+                        Queued
                       </dt>
-                      <dd className="text-[15px] font-bold tabular-nums text-[var(--tb-ink)]">
+                      <dd className="mt-1 text-[16px] font-bold leading-none tabular-nums text-[var(--tb-ink)]">
                         {project.stages.backlog + project.stages.todo}
                       </dd>
                     </div>
                     <div
                       className={[
-                        "rounded-[2px] border-2 border-[var(--tb-ink)] px-2 py-1.5",
+                        "flex flex-col justify-between rounded-[2px] border-2 border-[var(--tb-ink)] px-2 py-2",
                         project.stages.revision > 0
                           ? "bg-[var(--tb-secondary)] text-[var(--tb-on-accent)]"
                           : "bg-[var(--tb-bg)] text-[var(--tb-ink)]",
                       ].join(" ")}
                     >
-                      <dt className="text-[11px] font-bold">Revision</dt>
-                      <dd className="text-[15px] font-bold tabular-nums">
+                      <dt
+                        className={[
+                          "whitespace-nowrap text-[11px] font-bold",
+                          project.stages.revision > 0
+                            ? ""
+                            : "text-[var(--tb-ink-muted)]",
+                        ].join(" ")}
+                      >
+                        Revision
+                      </dt>
+                      <dd className="mt-1 text-[16px] font-bold leading-none tabular-nums">
                         {project.stages.revision}
                       </dd>
                     </div>
-                    <div className="rounded-[2px] border-2 border-[var(--tb-ink)] bg-[var(--tb-bg)] px-2 py-1.5">
-                      <dt className="text-[11px] font-bold text-[var(--tb-ink-muted)]">
-                        Active / Review
+                    <div className="flex flex-col justify-between rounded-[2px] border-2 border-[var(--tb-ink)] bg-[var(--tb-bg)] px-2 py-2">
+                      <dt className="whitespace-nowrap text-[11px] font-bold text-[var(--tb-ink-muted)]">
+                        Active
                       </dt>
-                      <dd className="text-[15px] font-bold tabular-nums text-[var(--tb-ink)]">
+                      <dd className="mt-1 text-[16px] font-bold leading-none tabular-nums text-[var(--tb-ink)]">
                         {project.stages.inProgress + project.stages.inReview}
                       </dd>
                     </div>
@@ -189,20 +198,20 @@ export function ProjectsDirectory({
                   <div className="flex items-center gap-2">
                     <Link
                       href={`/projects/${project.id}?view=calendar`}
-                      className="tb-tactile-motion inline-flex min-h-[38px] items-center rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-bg)] px-2.5 text-[12px] font-bold text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)] hover:bg-[var(--tb-amber)] hover:text-[var(--tb-on-accent)]"
+                      className="tb-tactile-motion inline-flex min-h-[40px] items-center rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-bg)] px-3 text-[12px] font-bold text-[var(--tb-ink)] shadow-[var(--tb-shadow-xs)] hover:bg-[var(--tb-amber)] hover:text-[var(--tb-on-accent)]"
                     >
                       Calendar
                     </Link>
                     <Link
                       href={`/projects/${project.id}`}
-                      className="tb-tactile-motion inline-flex min-h-[38px] items-center gap-1.5 rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-primary)] px-3 text-[12px] font-bold text-[var(--tb-on-accent)] shadow-[var(--tb-shadow-xs)] hover:bg-[var(--tb-primary-hover)]"
+                      className="tb-tactile-motion inline-flex min-h-[40px] items-center gap-1.5 rounded-[3px] border-2 border-[var(--tb-ink)] bg-[var(--tb-primary)] px-3 text-[12px] font-bold text-[var(--tb-on-accent)] shadow-[var(--tb-shadow-xs)] hover:bg-[var(--tb-primary-hover)]"
                     >
                       <span>Kanban</span>
                       <ArrowRightIcon className="h-3.5 w-3.5" />
                     </Link>
                   </div>
                 </div>
-              </div>
+              </article>
             );
           })}
         </div>

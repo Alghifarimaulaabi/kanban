@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   description: "Internal Kanban delivery workspace for software teams.",
 };
 
-const THEME_INIT_SCRIPT = `(function(){try{var k="tb-theme";var s=localStorage.getItem(k);var t=(s==="dark"||s==="light")?s:(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.dataset.theme=t;}catch(e){}})();`;
+const THEME_INIT_SCRIPT = `(function(){try{var k="tb-theme";var s=localStorage.getItem(k);var t=(s==="dark"||s==="light")?s:(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");var r=document.documentElement;r.dataset.theme=t;r.classList.toggle("dark",t==="dark");r.style.colorScheme=t;}catch(e){}})();`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
