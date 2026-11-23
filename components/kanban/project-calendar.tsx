@@ -385,7 +385,9 @@ export function ProjectCalendar({
 
         {unscheduledTasks.length === 0 ? (
           <p className="mt-3 text-[13px] font-medium text-[var(--tb-ink-muted)]">
-            Semua task pada filter ini sudah memiliki jadwal tanggal.
+            {filteredTasks.length === 0
+              ? "Belum ada task pada filter ini."
+              : "Semua task pada filter ini sudah memiliki jadwal tanggal."}
           </p>
         ) : (
           <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">

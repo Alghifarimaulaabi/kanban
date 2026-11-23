@@ -2,10 +2,14 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type DragEvent } from "react";
+import { useMemo, useState, type DragEvent } from "react";
 import { PlusIcon } from "@/components/admin/admin-icons";
 import { getInitials, type ProjectAccent } from "@/components/admin/types";
 import { BrutalButton } from "@/components/login/brutal-button";
+import {
+  MemberFilterDropdown,
+  type MemberFilterValue,
+} from "./member-filter-dropdown";
 import { ProjectCalendar } from "./project-calendar";
 import { TaskModal } from "./task-modal";
 import {
@@ -32,6 +36,7 @@ interface KanbanBoardProps {
   members: KanbanMember[];
   initialTasks: KanbanTask[];
   initialView?: ProjectViewTab;
+  initialMemberFilter?: MemberFilterValue;
   currentUser: {
     id: string;
     name: string;
@@ -93,17 +98,65 @@ export function KanbanBoard({
   members,
   initialTasks,
   initialView = "kanban",
+  initialMemberFilter = "ALL",
   currentUser,
 }: KanbanBoardProps) {
   const router = useRouter();
   const [prevInitialTasks, setPrevInitialTasks] = useState(initialTasks);
   const [tasks, setTasks] = useState<KanbanTask[]>(initialTasks);
   const [activeView, setActiveView] = useState<ProjectViewTab>(initialView);
+  const [memberFilter, setMemberFilter] =
+    useState<MemberFilterValue>(initialMemberFilter);
 
   if (initialTasks !== prevInitialTasks) {
     setPrevInitialTasks(initialTasks);
     setTasks(initialTasks);
   }
+
+  const filterMembers = useMemo(() => {
+    const map = new Map<string, KanbanMember>();
+    for (const member of members) {
+      map.set(member.id, member);
+    }
+    for (const task of tasks) {
+      if (task.assignee && !map.has(task.assignee.id)) {
+        map.set(task.assignee.id, {
+          id: task.assignee.id,
+          name: task.assignee.name,
+          email: task.assignee.email,
+          role: "member",
+        });
+      }
+    }
+    return Array.from(map.values());
+  }, [members, tasks]);
+
+  const taskCounts = useMemo(() => {
+    const byMember = new Map<string, number>();
+    let unassigned = 0;
+
+    for (const task of tasks) {
+      if (!task.assigneeId) {
+        unassigned += 1;
+      } else {
+        byMember.set(task.assigneeId, (byMember.get(task.assigneeId) ?? 0) + 1);
+      }
+    }
+
+    return {
+      total: tasks.length,
+      unassigned,
+      byMember,
+    };
+  }, [tasks]);
+
+  const memberFilteredTasks = useMemo(() => {
+    if (memberFilter === "ALL") return tasks;
+    if (memberFilter === "UNASSIGNED") {
+      return tasks.filter((task) => !task.assigneeId);
+    }
+    return tasks.filter((task) => task.assigneeId === memberFilter);
+  }, [tasks, memberFilter]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<KanbanTask | null>(null);
@@ -119,6 +172,19 @@ export function KanbanBoard({
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
       url.searchParams.set("view", nextView);
+      window.history.replaceState({}, "", url.toString());
+    }
+  }
+
+  function handleMemberFilterChange(nextMember: MemberFilterValue) {
+    setMemberFilter(nextMember);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (nextMember === "ALL") {
+        url.searchParams.delete("member");
+      } else {
+        url.searchParams.set("member", nextMember);
+      }
       window.history.replaceState({}, "", url.toString());
     }
   }
@@ -320,8 +386,8 @@ export function KanbanBoard({
         </div>
       </header>
 
-      {/* Subheader bar: Description + Team Avatars */}
-      <div className="border-b-2 border-[var(--tb-ink)] bg-[var(--tb-surface)]/90">
+      {/* Subheader bar: Description + Member Filter Dropdown & Team Avatars */}
+      <div className="relative z-10 border-b-2 border-[var(--tb-ink)] bg-[var(--tb-surface)]/90">
         <div className="mx-auto flex max-w-[1680px] flex-wrap items-center justify-between gap-3 px-4 py-2 sm:px-6">
           <p className="text-[13px] font-medium text-[var(--tb-ink-muted)]">
             {project.description ||
@@ -330,25 +396,54 @@ export function KanbanBoard({
                 : "View scheduled tasks by month, click any day to create a task, or click a task for details.")}
           </p>
 
-          <div className="flex items-center gap-2">
-            <div className="flex -space-x-1.5">
-              {members.slice(0, 6).map((member) => (
-                <span
-                  key={member.id}
-                  title={`${member.name} (${member.role})`}
-                  className={[
-                    "inline-flex h-7 w-7 items-center justify-center rounded-[2px] border-2 border-[var(--tb-ink)] text-[10px] font-bold text-[var(--tb-on-accent)]",
-                    member.role === "admin"
-                      ? "bg-[var(--tb-secondary)]"
-                      : "bg-[var(--tb-accent)]",
-                  ].join(" ")}
-                >
-                  {getInitials(member.name)}
-                </span>
-              ))}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="hidden -space-x-1.5 md:flex">
+              {filterMembers.slice(0, 6).map((member) => {
+                const isSelected = memberFilter === member.id;
+                const isDimmed = memberFilter !== "ALL" && !isSelected;
+
+                return (
+                  <button
+                    key={member.id}
+                    type="button"
+                    onClick={() =>
+                      handleMemberFilterChange(isSelected ? "ALL" : member.id)
+                    }
+                    title={
+                      isSelected
+                        ? `Hapus filter ${member.name}`
+                        : `Filter task: ${member.name} (${member.role})`
+                    }
+                    aria-pressed={isSelected}
+                    className={[
+                      "inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-[2px] border-2 border-[var(--tb-ink)] text-[10px] font-bold text-[var(--tb-on-accent)] transition-transform hover:z-10 hover:-translate-y-0.5 focus-visible:z-10 focus-visible:outline-solid focus-visible:outline-[3px] focus-visible:outline-offset-1 focus-visible:outline-[var(--tb-ink)]",
+                      member.role === "admin"
+                        ? "bg-[var(--tb-secondary)]"
+                        : "bg-[var(--tb-accent)]",
+                      isSelected
+                        ? "z-10 -translate-y-0.5 ring-2 ring-[var(--tb-primary)]"
+                        : "",
+                      isDimmed ? "opacity-45 hover:opacity-100" : "",
+                    ].join(" ")}
+                  >
+                    {getInitials(member.name)}
+                  </button>
+                );
+              })}
             </div>
+
+            <MemberFilterDropdown
+              members={filterMembers}
+              selectedMemberId={memberFilter}
+              onSelectMember={handleMemberFilterChange}
+              taskCounts={taskCounts}
+              currentUserId={currentUser.id}
+            />
+
             <span className="text-[12px] font-bold tabular-nums text-[var(--tb-ink)]">
-              {tasks.length} {tasks.length === 1 ? "task" : "tasks"}
+              {memberFilter === "ALL"
+                ? `${tasks.length} ${tasks.length === 1 ? "task" : "tasks"}`
+                : `${memberFilteredTasks.length} / ${tasks.length} tasks`}
             </span>
           </div>
         </div>
@@ -357,7 +452,7 @@ export function KanbanBoard({
       {/* Main Content: Kanban or Calendar */}
       {activeView === "calendar" ? (
         <ProjectCalendar
-          tasks={tasks}
+          tasks={memberFilteredTasks}
           onSelectTask={openEditModal}
           onCreateTaskForDate={(dateIso) => openCreateModal("TODO", dateIso)}
         />
@@ -365,7 +460,9 @@ export function KanbanBoard({
         <main className="flex-1 overflow-x-auto px-4 py-4 sm:px-6">
           <div className="mx-auto grid min-w-[1240px] max-w-[1680px] grid-cols-6 items-start gap-3.5">
             {KANBAN_COLUMNS.map((column) => {
-              const columnTasks = tasks.filter((t) => t.status === column.id);
+              const columnTasks = memberFilteredTasks.filter(
+                (t) => t.status === column.id,
+              );
               const isOver = dragOverColumn === column.id;
 
               return (
@@ -524,6 +621,9 @@ export function KanbanBoard({
           currentUserName={currentUser.name}
           defaultStatus={defaultStatus}
           defaultDueDate={defaultDueDate}
+          defaultAssigneeId={
+            members.some((m) => m.id === memberFilter) ? memberFilter : ""
+          }
           editingTask={editingTask}
           onTaskCreated={handleTaskCreated}
           onTaskUpdated={handleTaskUpdated}

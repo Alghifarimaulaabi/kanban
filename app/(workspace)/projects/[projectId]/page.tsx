@@ -6,6 +6,7 @@ import {
   KanbanBoard,
   type ProjectViewTab,
 } from "@/components/kanban/kanban-board";
+import type { MemberFilterValue } from "@/components/kanban/member-filter-dropdown";
 import type { KanbanMember, KanbanTask } from "@/components/kanban/types";
 import { prisma } from "@/lib/prisma";
 import { canAccessProject, formatDateInput } from "@/lib/project-access";
@@ -26,7 +27,7 @@ async function ProjectBoardContent({
   searchParams,
 }: {
   params: Promise<{ projectId: string }>;
-  searchParams: Promise<{ view?: string }>;
+  searchParams: Promise<{ view?: string; member?: string }>;
 }) {
   const [session, { projectId }, resolvedSearchParams] = await Promise.all([
     requireUserSession(),
@@ -121,6 +122,20 @@ async function ProjectBoardContent({
   const initialView: ProjectViewTab =
     resolvedSearchParams.view === "calendar" ? "calendar" : "kanban";
 
+  const requestedMember = resolvedSearchParams.member;
+  const validMemberIds = new Set<string>([
+    ...members.map((m) => m.id),
+    ...initialTasks
+      .map((t) => t.assigneeId)
+      .filter((id): id is string => Boolean(id)),
+  ]);
+  const initialMemberFilter: MemberFilterValue =
+    requestedMember === "UNASSIGNED"
+      ? "UNASSIGNED"
+      : requestedMember && validMemberIds.has(requestedMember)
+        ? requestedMember
+        : "ALL";
+
   return (
     <KanbanBoard
       project={{
@@ -133,6 +148,7 @@ async function ProjectBoardContent({
       members={members}
       initialTasks={initialTasks}
       initialView={initialView}
+      initialMemberFilter={initialMemberFilter}
       currentUser={{
         id: session.user.id,
         name: session.user.name,
@@ -148,7 +164,7 @@ export default function ProjectKanbanPage({
   searchParams,
 }: {
   params: Promise<{ projectId: string }>;
-  searchParams: Promise<{ view?: string }>;
+  searchParams: Promise<{ view?: string; member?: string }>;
 }) {
   return (
     <Suspense

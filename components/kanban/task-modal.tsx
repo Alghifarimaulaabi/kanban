@@ -68,6 +68,7 @@ interface TaskModalProps {
   currentUserName: string;
   defaultStatus?: TaskStatus;
   defaultDueDate?: string;
+  defaultAssigneeId?: string;
   editingTask?: KanbanTask | null;
   onTaskCreated: (task: KanbanTask) => void;
   onTaskUpdated: (task: KanbanTask) => void;
@@ -96,6 +97,7 @@ export function TaskModal({
   currentUserName,
   defaultStatus = "BACKLOG",
   defaultDueDate = "",
+  defaultAssigneeId = "",
   editingTask,
   onTaskCreated,
   onTaskUpdated,
@@ -114,7 +116,9 @@ export function TaskModal({
   const [priority, setPriority] = useState<TaskPriority>(
     editingTask?.priority ?? "MEDIUM",
   );
-  const [assigneeId, setAssigneeId] = useState(editingTask?.assigneeId ?? "");
+  const [assigneeId, setAssigneeId] = useState(
+    editingTask?.assigneeId ?? defaultAssigneeId,
+  );
   const [startDate, setStartDate] = useState(editingTask?.startDate ?? "");
   const [dueDate, setDueDate] = useState(
     editingTask?.dueDate ?? defaultDueDate,
